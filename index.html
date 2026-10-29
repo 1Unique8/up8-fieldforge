@@ -1,1 +1,350 @@
-FULL_HTML_CONTENT_HERE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Up8 FieldForge · Specimen Intake</title>
+  <meta name="description" content="Field specimen intake, diagnostic tests, AI-assisted identification, valuation, and disposition for Unique Perspective 8.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>8</text></svg>">
+  <style>
+    :root {
+      --bg: #0B0D10;
+      --surface: #161A20;
+      --surface-2: #1E232B;
+      --gold: #C9A227;
+      --gold-dim: #8A7420;
+      --text: #E8E6E3;
+      --text-muted: #9A9690;
+      --line: #2A3038;
+      --success: #4A9B6E;
+      --warn: #C47A3A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--gold); color: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 20px;
+    }
+    h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    .nav-links { display: flex; gap: 16px; font-size: 14px; }
+    .nav-links a { color: var(--gold); text-decoration: none; }
+    main { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+    .tab {
+      padding: 10px 16px; background: none; border: none;
+      color: var(--text-muted); cursor: pointer; font-size: 15px;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    form, .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--text-muted); }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; background: var(--surface-2);
+      border: 1px solid var(--line); border-radius: 8px; color: var(--text);
+      font-size: 15px;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+    .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0; }
+    .test-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    button {
+      background: var(--gold); color: var(--bg); border: none; padding: 12px 20px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px;
+    }
+    button.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+    button:hover { opacity: 0.9; }
+    .ai-result {
+      background: var(--surface-2);
+      border-left: 3px solid var(--gold);
+      padding: 16px;
+      margin-top: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .disposition { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .disp-throw { background: #3A4A5A; }
+    .disp-edu { background: #2A4A3A; color: #8FCFB0; }
+    .disp-jewelry { background: #4A3A20; color: var(--gold); }
+    .disp-crush { background: #4A2A2A; color: #E8A0A0; }
+    .ledger-item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .ledger-item:hover { border-color: var(--gold-dim); }
+    .meta { font-size: 13px; color: var(--text-muted); }
+    footer {
+      text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 13px;
+      border-top: 1px solid var(--line); margin-top: 40px;
+    }
+    footer a { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="https://uniqueperspective8.com" target="_blank">
+      <span class="logo">8</span>
+      <div>
+        <h1>Up8 FieldForge</h1>
+        <div style="font-size:12px;color:var(--text-muted)">Raw Origins · Refined Craft</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="https://uniqueperspective8.com" target="_blank">Site</a>
+      <a href="https://community.uniqueperspective8.com/education/" target="_blank">Education</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-tab="entry">New Specimen</button>
+      <button class="tab" data-tab="ledger">Ledger</button>
+      <button class="tab" data-tab="ai">AI Assistant</button>
+    </div>
+
+    <div id="entry" class="panel active">
+      <form id="specimenForm">
+        <h2 style="margin-top:0">Specimen Entry</h2>
+        <label>Locality / Site</label>
+        <select id="locality">
+          <option value="Similkameen">Similkameen River / Hedley area</option>
+          <option value="Okanagan">South Okanagan (Oliver / Osoyoos)</option>
+          <option value="Penticton">Penticton / Hwy 97 cuts</option>
+          <option value="Princeton">Princeton placer / claims</option>
+          <option value="Other">Other / Custom GPS</option>
+        </select>
+        <div class="row">
+          <div>
+            <label>Weight (grams)</label>
+            <input type="number" id="weight" step="0.1" min="0" placeholder="e.g. 64.4">
+          </div>
+          <div>
+            <label>Size L × W × H (cm)</label>
+            <input type="text" id="size" placeholder="e.g. 5.2 × 3.8 × 2.1">
+          </div>
+        </div>
+        <label>Diagnostic Tests (check what was performed / observed)</label>
+        <div class="tests">
+          <label class="test-item"><input type="checkbox" id="mohs"> Mohs hardness estimated</label>
+          <label class="test-item"><input type="checkbox" id="sg"> Specific gravity measured</label>
+          <label class="test-item"><input type="checkbox" id="streak"> Streak tested</label>
+          <label class="test-item"><input type="checkbox" id="acid"> Acid reaction</label>
+          <label class="test-item"><input type="checkbox" id="uv"> UV fluorescence</label>
+          <label class="test-item"><input type="checkbox" id="magnet"> Magnetic response</label>
+          <label class="test-item"><input type="checkbox" id="candling"> Candling / translucency</label>
+          <label class="test-item"><input type="checkbox" id="soundness"> Soundness / fracture check</label>
+        </div>
+        <label>Test notes / observations</label>
+        <textarea id="testNotes" rows="3" placeholder="Hardness ~6-7, no acid reaction, slight magnetism, white streak..."></textarea>
+        <label>Visual description / color / texture</label>
+        <textarea id="description" rows="2" placeholder="Banded gneiss with iron staining, rough exterior..."></textarea>
+        <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+          <button type="submit">Save Specimen</button>
+          <button type="button" class="secondary" id="analyzeBtn">Analyze with AI</button>
+        </div>
+        <div id="aiPreview" class="ai-result" style="display:none;"></div>
+      </form>
+    </div>
+
+    <div id="ledger" class="panel">
+      <h2>Specimen Ledger</h2>
+      <p class="meta">Stored locally in this browser. Export or sync later via Sheets.</p>
+      <div id="ledgerList"></div>
+      <button class="secondary" id="clearLedger" style="margin-top:12px;">Clear All (local)</button>
+    </div>
+
+    <div id="ai" class="panel">
+      <div class="card">
+        <h2>AI Field Assistant</h2>
+        <p>Enter specimen details in the New Specimen tab, then use “Analyze with AI”. The assistant suggests:</p>
+        <ul>
+          <li><strong>Possible identification</strong> based on tests and description</li>
+          <li><strong>Rough value range</strong> for educational / craft use (BC field material)</li>
+          <li><strong>Disposition recommendation</strong>: Throw it back · Educational specimen · Jewelry / lapidary · Crush / process</li>
+        </ul>
+        <p class="meta">Currently a local rules-based assistant. Can be extended to call an external AI endpoint (Grok, etc.) for richer analysis while keeping data private.</p>
+        <p>Questions to refine the AI:</p>
+        <ul>
+          <li>What hardness range or specific mineral families are most common in your Oliver / South Okanagan work?</li>
+          <li>How should value estimates factor in ethical small-scale mining and one-of-a-kind craft premium?</li>
+          <li>When would you prefer “educational” over “jewelry” for a solid but less colorful piece?</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Part of the <a href="https://uniqueperspective8.com" target="_blank">Unique Perspective 8</a> ecosystem ·
+    <a href="https://github.com/1Unique8/up8-fieldforge" target="_blank">GitHub</a> ·
+    Raw Origins. Refined Craft.
+  </footer>
+
+  <script>
+    const STORAGE_KEY = 'up8_fieldforge_specimens_v1';
+
+    function loadSpecimens() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveSpecimens(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function renderLedger() {
+      const list = loadSpecimens();
+      const container = document.getElementById('ledgerList');
+      if (!list.length) {
+        container.innerHTML = '<p class="meta">No specimens yet. Add one from the New Specimen tab.</p>';
+        return;
+      }
+      container.innerHTML = list.map((s, i) => `
+        <div class="ledger-item" data-idx="${i}">
+          <strong>${s.locality || 'Unknown locality'}</strong> · ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
+          <span class="meta">${s.description || s.testNotes || 'No notes'} </span><br>
+          ${s.ai ? `<span class="disposition disp-${s.ai.dispositionClass}">${s.ai.disposition}</span> · ~${s.ai.value}` : ''}
+        </div>
+      `).join('');
+    }
+
+    function analyzeSpecimen(data) {
+      // Simple rules-based AI mock — expand with real model later
+      const notes = (data.testNotes + ' ' + data.description).toLowerCase();
+      let id = 'Undetermined field stone';
+      let value = 'CAD $5–15 (educational / raw)';
+      let disposition = 'Throw it back';
+      let dispositionClass = 'throw';
+
+      if (notes.includes('quartz') || notes.includes('clear') || notes.includes('crystal')) {
+        id = 'Quartz / silica variety (probable)';
+        value = 'CAD $12–35';
+        disposition = 'Jewelry / lapidary';
+        dispositionClass = 'jewelry';
+      } else if (notes.includes('gneiss') || notes.includes('banded') || notes.includes('metamorphic')) {
+        id = 'Banded gneiss / metamorphic (probable)';
+        value = 'CAD $8–22';
+        disposition = 'Educational specimen';
+        dispositionClass = 'edu';
+      } else if (notes.includes('jasper') || notes.includes('chalcedony') || notes.includes('agate')) {
+        id = 'Chalcedony / jasper / agate (possible)';
+        value = 'CAD $15–45';
+        disposition = 'Jewelry / lapidary';
+        dispositionClass = 'jewelry';
+      } else if (data.weight && parseFloat(data.weight) > 200) {
+        id = 'Larger field specimen';
+        value = 'CAD $10–30';
+        disposition = 'Educational specimen';
+        dispositionClass = 'edu';
+      } else if (notes.includes('iron') || notes.includes('magnetic') || data.magnet) {
+        id = 'Iron-bearing / magnetic rock';
+        value = 'CAD $6–18';
+        disposition = 'Crush / process or educational';
+        dispositionClass = 'crush';
+      }
+
+      if (data.mohs && notes.includes('hard')) {
+        disposition = disposition === 'Throw it back' ? 'Educational specimen' : disposition;
+        dispositionClass = dispositionClass === 'throw' ? 'edu' : dispositionClass;
+      }
+
+      return { id, value, disposition, dispositionClass };
+    }
+
+    document.getElementById('specimenForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = {
+        locality: document.getElementById('locality').value,
+        weight: document.getElementById('weight').value,
+        size: document.getElementById('size').value,
+        testNotes: document.getElementById('testNotes').value,
+        description: document.getElementById('description').value,
+        mohs: document.getElementById('mohs').checked,
+        sg: document.getElementById('sg').checked,
+        streak: document.getElementById('streak').checked,
+        acid: document.getElementById('acid').checked,
+        uv: document.getElementById('uv').checked,
+        magnet: document.getElementById('magnet').checked,
+        candling: document.getElementById('candling').checked,
+        soundness: document.getElementById('soundness').checked,
+        timestamp: new Date().toISOString()
+      };
+      data.ai = analyzeSpecimen(data);
+      const list = loadSpecimens();
+      list.unshift(data);
+      saveSpecimens(list);
+      alert('Specimen saved to local ledger.');
+      document.getElementById('specimenForm').reset();
+      renderLedger();
+    });
+
+    document.getElementById('analyzeBtn').addEventListener('click', () => {
+      const data = {
+        locality: document.getElementById('locality').value,
+        weight: document.getElementById('weight').value,
+        size: document.getElementById('size').value,
+        testNotes: document.getElementById('testNotes').value,
+        description: document.getElementById('description').value,
+        mohs: document.getElementById('mohs').checked,
+        magnet: document.getElementById('magnet').checked
+      };
+      const ai = analyzeSpecimen(data);
+      const preview = document.getElementById('aiPreview');
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <strong>Suggested ID:</strong> ${ai.id}<br>
+        <strong>Value range:</strong> ${ai.value}<br>
+        <strong>Disposition:</strong> <span class="disposition disp-${ai.dispositionClass}">${ai.disposition}</span><br>
+        <span class="meta">Based on entered tests and description. Refine by answering the questions in the AI Assistant tab.</span>
+      `;
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'ledger') renderLedger();
+      });
+    });
+
+    document.getElementById('clearLedger').addEventListener('click', () => {
+      if (confirm('Clear all local specimens? This cannot be undone.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        renderLedger();
+      }
+    });
+
+    renderLedger();
+  </script>
+</body>
+</html>
