@@ -2,25 +2,31 @@
 
 **Geological Provenance & Lapidary Metrology** for Unique Perspective 8.
 
-Single-file progressive web app for field specimen intake, dual-station photography (rough + slab), diagnostic test checklists, specimen ledger with lineage, AI copilot, and Google Sheets export.
+Single-file progressive web app for field specimen intake, diagnostic test checklists, specimen ledger, AI-assisted identification/valuation/disposition, and connection to uniqueperspective8.com.
 
 ## Features
-- Station A: Field mobile OCR / AR intake with locality GPS
-- Station B: Workshop slabbing & metrology with cabochon stencils
-- Master specimen ledger with dual photos, weights, dimensions, tests, appraisals
-- Diagnostic protocol (Mohs, SG, streak, acid, UV, magnet, candling, soundness)
-- Dual-image AI enhancement pipeline + `=IMAGE()` formulas for Sheets
-- Locality selector (Similkameen, Hedley, Okanagan, Sumas, custom GPS)
-- Printable specimen drawer labels
-- Mock AI Copilot for appraisals, kerf, SG formulas
-- **localStorage persistence** so records survive refresh
+- Specimen entry: locality selector (Similkameen, South Okanagan, Penticton, Princeton, custom), weight, size, visual description
+- Diagnostic protocol checkboxes (Mohs, SG, streak, acid, UV, magnet, candling, soundness) + notes
+- Master specimen ledger with localStorage persistence
+- AI assistant (rules-based, extensible to external model): suggests possible ID, rough value range, and disposition (throw it back / educational / jewelry-lapidary / crush-process)
+- Branding and direct links to uniqueperspective8.com and the education hub
+- Printable-friendly layout, mobile-first for field use
 
 ## Usage
-Open `index.html` in a modern browser (or host on GitHub Pages / SiteGround).
+Open `index.html` in a modern browser (or host on GitHub Pages / SiteGround / Vercel).
 
-For Google Sheets sync: deploy an Apps Script web app and paste the webhook URL in the Google Sheet modal.
+All data stays local in the browser unless you export. Ideal for offline field work in the Okanagan.
 
 ## Integration with uniqueperspective8.com
-Host this as a static page or subdomain (e.g. `field.uniqueperspective8.com` or `/fieldforge`). Link from the Education / Field hub.
+- Header and footer link back to the main site and education hub.
+- Specimens can later feed educational pages, "Know the cut" cabinet, or shop provenance stories.
+- Suggested hosting: `field.uniqueperspective8.com` or a `/fieldforge` path on the main repo / Pages.
 
-Part of the 1Unique8 ecosystem.
+## Next refinements
+- Dual photo upload (rough + slab)
+- Real AI endpoint (prompt to Grok or local model) while keeping private data local
+- Google Sheets / Vein Ledger webhook export
+- GPS capture and MINFILE / claim reference fields
+- Printable drawer labels
+
+Part of the 1Unique8 ecosystem. Raw Origins. Refined Craft.
