@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Up8 FieldForge · Specimen Intake</title>
-  <meta name="description" content="Field specimen intake, diagnostic tests, AI-assisted identification, valuation, and disposition for Unique Perspective 8.">
+  <meta name="description" content="Field specimen intake, diagnostic tests, dual photos, AI-assisted identification, valuation, disposition, printable labels, and Sheets export for Unique Perspective 8.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>8</text></svg>">
   <style>
     :root {
@@ -48,8 +48,8 @@
     h1 { margin: 0; font-size: 18px; font-weight: 600; }
     .nav-links { display: flex; gap: 16px; font-size: 14px; }
     .nav-links a { color: var(--gold); text-decoration: none; }
-    main { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+    main { max-width: 960px; margin: 0 auto; padding: 20px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
     .tab {
       padding: 10px 16px; background: none; border: none;
       color: var(--text-muted); cursor: pointer; font-size: 15px;
@@ -72,7 +72,8 @@
       font-size: 15px;
     }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .row, .row-3 { grid-template-columns: 1fr; } }
     .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0; }
     .test-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
     button {
@@ -99,10 +100,16 @@
       border-radius: 10px;
       padding: 14px;
       margin-bottom: 10px;
-      cursor: pointer;
     }
     .ledger-item:hover { border-color: var(--gold-dim); }
     .meta { font-size: 13px; color: var(--text-muted); }
+    .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .photo-box { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center; }
+    .photo-box img { max-width: 100%; max-height: 160px; border-radius: 6px; margin-top: 8px; }
+    .label-preview {
+      background: white; color: #111; padding: 16px; border-radius: 8px; max-width: 320px;
+      font-family: system-ui; margin: 12px 0;
+    }
     footer {
       text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 13px;
       border-top: 1px solid var(--line); margin-top: 40px;
@@ -127,22 +134,38 @@
 
   <main>
     <div class="tabs">
-      <button class="tab active" data-tab="entry">New Specimen</button>
+      <button class="tab active" data-tab="entry">Station A · Field</button>
+      <button class="tab" data-tab="workshop">Station B · Workshop</button>
       <button class="tab" data-tab="ledger">Ledger</button>
       <button class="tab" data-tab="ai">AI Assistant</button>
+      <button class="tab" data-tab="export">Export & Labels</button>
     </div>
 
     <div id="entry" class="panel active">
       <form id="specimenForm">
-        <h2 style="margin-top:0">Specimen Entry</h2>
+        <h2 style="margin-top:0">Station A — Field Mobile Intake</h2>
+        <p class="meta">Locality, GPS, dual photos (rough + slab), weight, size, diagnostic tests.</p>
+
         <label>Locality / Site</label>
         <select id="locality">
           <option value="Similkameen">Similkameen River / Hedley area</option>
           <option value="Okanagan">South Okanagan (Oliver / Osoyoos)</option>
           <option value="Penticton">Penticton / Hwy 97 cuts</option>
           <option value="Princeton">Princeton placer / claims</option>
+          <option value="Sumas">Sumas</option>
           <option value="Other">Other / Custom GPS</option>
         </select>
+
+        <div class="row">
+          <div>
+            <label>GPS Coordinates</label>
+            <input type="text" id="gps" placeholder="lat, lon or click capture">
+          </div>
+          <div style="align-self:end">
+            <button type="button" class="secondary" id="gpsBtn" style="width:100%">Capture GPS</button>
+          </div>
+        </div>
+
         <div class="row">
           <div>
             <label>Weight (grams)</label>
@@ -153,21 +176,44 @@
             <input type="text" id="size" placeholder="e.g. 5.2 × 3.8 × 2.1">
           </div>
         </div>
-        <label>Diagnostic Tests (check what was performed / observed)</label>
+
+        <label>Dual Photos (Rough + Slab)</label>
+        <div class="photos">
+          <div class="photo-box">
+            <div>Rough / Field</div>
+            <input type="file" id="photoRough" accept="image/*" capture="environment">
+            <img id="previewRough" style="display:none">
+          </div>
+          <div class="photo-box">
+            <div>Slab / Workshop</div>
+            <input type="file" id="photoSlab" accept="image/*">
+            <img id="previewSlab" style="display:none">
+          </div>
+        </div>
+
+        <label>Diagnostic Tests</label>
         <div class="tests">
-          <label class="test-item"><input type="checkbox" id="mohs"> Mohs hardness estimated</label>
-          <label class="test-item"><input type="checkbox" id="sg"> Specific gravity measured</label>
-          <label class="test-item"><input type="checkbox" id="streak"> Streak tested</label>
+          <label class="test-item"><input type="checkbox" id="mohs"> Mohs hardness</label>
+          <label class="test-item"><input type="checkbox" id="sg"> Specific gravity</label>
+          <label class="test-item"><input type="checkbox" id="streak"> Streak</label>
           <label class="test-item"><input type="checkbox" id="acid"> Acid reaction</label>
           <label class="test-item"><input type="checkbox" id="uv"> UV fluorescence</label>
           <label class="test-item"><input type="checkbox" id="magnet"> Magnetic response</label>
           <label class="test-item"><input type="checkbox" id="candling"> Candling / translucency</label>
-          <label class="test-item"><input type="checkbox" id="soundness"> Soundness / fracture check</label>
+          <label class="test-item"><input type="checkbox" id="soundness"> Soundness / fracture</label>
         </div>
+
+        <div class="row-3">
+          <div><label>Mohs value</label><input type="text" id="mohsVal" placeholder="e.g. 6.5-7"></div>
+          <div><label>SG value</label><input type="text" id="sgVal" placeholder="e.g. 2.65"></div>
+          <div><label>Streak color</label><input type="text" id="streakVal" placeholder="white / brown"></div>
+        </div>
+
         <label>Test notes / observations</label>
         <textarea id="testNotes" rows="3" placeholder="Hardness ~6-7, no acid reaction, slight magnetism, white streak..."></textarea>
         <label>Visual description / color / texture</label>
         <textarea id="description" rows="2" placeholder="Banded gneiss with iron staining, rough exterior..."></textarea>
+
         <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
           <button type="submit">Save Specimen</button>
           <button type="button" class="secondary" id="analyzeBtn">Analyze with AI</button>
@@ -176,29 +222,51 @@
       </form>
     </div>
 
+    <div id="workshop" class="panel">
+      <div class="card">
+        <h2>Station B — Workshop Slabbing & Metrology</h2>
+        <p class="meta">Cabochon stencils, kerf notes, dimensional metrology, dual-image AI enhancement pipeline placeholder.</p>
+        <label>Cabochon / Cut notes</label>
+        <textarea id="cabNotes" rows="2" placeholder="Planned 30x22mm oval, kerf 1.2mm, template used..."></textarea>
+        <label>Metrology / dimensions after slab</label>
+        <input type="text" id="metrology" placeholder="Slab thickness 4.2mm, usable face 28x20mm">
+        <p class="meta">Photos from Station A are available in the ledger. AI enhancement formulas for Sheets can be added on export.</p>
+      </div>
+    </div>
+
     <div id="ledger" class="panel">
-      <h2>Specimen Ledger</h2>
-      <p class="meta">Stored locally in this browser. Export or sync later via Sheets.</p>
+      <h2>Master Specimen Ledger</h2>
+      <p class="meta">Dual photos, weights, dimensions, tests, appraisals. Stored locally.</p>
       <div id="ledgerList"></div>
       <button class="secondary" id="clearLedger" style="margin-top:12px;">Clear All (local)</button>
     </div>
 
     <div id="ai" class="panel">
       <div class="card">
-        <h2>AI Field Assistant</h2>
-        <p>Enter specimen details in the New Specimen tab, then use “Analyze with AI”. The assistant suggests:</p>
+        <h2>AI Field Assistant / Copilot</h2>
+        <p>Suggests ID, value, disposition (throw it back / educational / jewelry / crush), plus kerf and SG formulas.</p>
         <ul>
-          <li><strong>Possible identification</strong> based on tests and description</li>
-          <li><strong>Rough value range</strong> for educational / craft use (BC field material)</li>
-          <li><strong>Disposition recommendation</strong>: Throw it back · Educational specimen · Jewelry / lapidary · Crush / process</li>
+          <li><strong>Possible identification</strong> from tests + description</li>
+          <li><strong>Rough value range</strong> (BC ethical field material + craft premium)</li>
+          <li><strong>Disposition</strong>: Throw it back · Educational specimen · Jewelry / lapidary · Crush / process</li>
+          <li>Mock SG formula and kerf guidance</li>
         </ul>
-        <p class="meta">Currently a local rules-based assistant. Can be extended to call an external AI endpoint (Grok, etc.) for richer analysis while keeping data private.</p>
-        <p>Questions to refine the AI:</p>
-        <ul>
-          <li>What hardness range or specific mineral families are most common in your Oliver / South Okanagan work?</li>
-          <li>How should value estimates factor in ethical small-scale mining and one-of-a-kind craft premium?</li>
-          <li>When would you prefer “educational” over “jewelry” for a solid but less colorful piece?</li>
-        </ul>
+        <p class="meta">Local rules-based now. Extendable to external AI while keeping private data local.</p>
+      </div>
+    </div>
+
+    <div id="export" class="panel">
+      <div class="card">
+        <h2>Export, Sheets & Printable Labels</h2>
+        <p>Google Sheets webhook (paste Apps Script URL), JSON export, and printable drawer labels.</p>
+        <label>Sheets Webhook URL</label>
+        <input type="text" id="webhook" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="secondary" id="exportJson">Export JSON</button>
+          <button type="button" class="secondary" id="exportSheets">Send to Sheets</button>
+          <button type="button" class="secondary" id="printLabel">Print Label Preview</button>
+        </div>
+        <div id="labelPreview" class="label-preview" style="display:none;"></div>
       </div>
     </div>
   </main>
@@ -210,7 +278,7 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = 'up8_fieldforge_specimens_v1';
+    const STORAGE_KEY = 'up8_fieldforge_specimens_v2';
 
     function loadSpecimens() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -224,21 +292,23 @@
       const list = loadSpecimens();
       const container = document.getElementById('ledgerList');
       if (!list.length) {
-        container.innerHTML = '<p class="meta">No specimens yet. Add one from the New Specimen tab.</p>';
+        container.innerHTML = '<p class="meta">No specimens yet. Add one from Station A.</p>';
         return;
       }
       container.innerHTML = list.map((s, i) => `
-        <div class="ledger-item" data-idx="${i}">
-          <strong>${s.locality || 'Unknown locality'}</strong> · ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
-          <span class="meta">${s.description || s.testNotes || 'No notes'} </span><br>
+        <div class="ledger-item">
+          <strong>${s.locality || 'Unknown'} ${s.gps ? '· ' + s.gps : ''}</strong><br>
+          ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
+          <span class="meta">${s.description || s.testNotes || 'No notes'}</span><br>
           ${s.ai ? `<span class="disposition disp-${s.ai.dispositionClass}">${s.ai.disposition}</span> · ~${s.ai.value}` : ''}
+          ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
+          ${s.photoSlab ? '<br><small>Slab photo attached</small>' : ''}
         </div>
       `).join('');
     }
 
     function analyzeSpecimen(data) {
-      // Simple rules-based AI mock — expand with real model later
-      const notes = (data.testNotes + ' ' + data.description).toLowerCase();
+      const notes = ((data.testNotes || '') + ' ' + (data.description || '')).toLowerCase();
       let id = 'Undetermined field stone';
       let value = 'CAD $5–15 (educational / raw)';
       let disposition = 'Throw it back';
@@ -271,30 +341,58 @@
         dispositionClass = 'crush';
       }
 
-      if (data.mohs && notes.includes('hard')) {
-        disposition = disposition === 'Throw it back' ? 'Educational specimen' : disposition;
-        dispositionClass = dispositionClass === 'throw' ? 'edu' : dispositionClass;
-      }
-
       return { id, value, disposition, dispositionClass };
     }
+
+    // Photo previews
+    function setupPreview(inputId, imgId) {
+      document.getElementById(inputId).addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = document.getElementById(imgId);
+          img.src = reader.result;
+          img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    setupPreview('photoRough', 'previewRough');
+    setupPreview('photoSlab', 'previewSlab');
+
+    document.getElementById('gpsBtn').addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          document.getElementById('gps').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+        }, () => alert('GPS unavailable or denied'));
+      } else alert('Geolocation not supported');
+    });
 
     document.getElementById('specimenForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const data = {
         locality: document.getElementById('locality').value,
+        gps: document.getElementById('gps').value,
         weight: document.getElementById('weight').value,
         size: document.getElementById('size').value,
         testNotes: document.getElementById('testNotes').value,
         description: document.getElementById('description').value,
         mohs: document.getElementById('mohs').checked,
+        mohsVal: document.getElementById('mohsVal').value,
         sg: document.getElementById('sg').checked,
+        sgVal: document.getElementById('sgVal').value,
         streak: document.getElementById('streak').checked,
+        streakVal: document.getElementById('streakVal').value,
         acid: document.getElementById('acid').checked,
         uv: document.getElementById('uv').checked,
         magnet: document.getElementById('magnet').checked,
         candling: document.getElementById('candling').checked,
         soundness: document.getElementById('soundness').checked,
+        cabNotes: document.getElementById('cabNotes') ? document.getElementById('cabNotes').value : '',
+        metrology: document.getElementById('metrology') ? document.getElementById('metrology').value : '',
+        photoRough: document.getElementById('previewRough').src || null,
+        photoSlab: document.getElementById('previewSlab').src || null,
         timestamp: new Date().toISOString()
       };
       data.ai = analyzeSpecimen(data);
@@ -303,6 +401,8 @@
       saveSpecimens(list);
       alert('Specimen saved to local ledger.');
       document.getElementById('specimenForm').reset();
+      document.getElementById('previewRough').style.display = 'none';
+      document.getElementById('previewSlab').style.display = 'none';
       renderLedger();
     });
 
@@ -323,8 +423,46 @@
         <strong>Suggested ID:</strong> ${ai.id}<br>
         <strong>Value range:</strong> ${ai.value}<br>
         <strong>Disposition:</strong> <span class="disposition disp-${ai.dispositionClass}">${ai.disposition}</span><br>
-        <span class="meta">Based on entered tests and description. Refine by answering the questions in the AI Assistant tab.</span>
+        <span class="meta">SG formula reminder: weight in air / (weight in air − weight in water). Kerf typically 1.0–1.5mm for cabbing.</span>
       `;
+    });
+
+    document.getElementById('exportJson').addEventListener('click', () => {
+      const data = JSON.stringify(loadSpecimens(), null, 2);
+      const blob = new Blob([data], {type: 'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'up8-fieldforge-specimens.json';
+      a.click();
+    });
+
+    document.getElementById('exportSheets').addEventListener('click', () => {
+      const url = document.getElementById('webhook').value;
+      if (!url) { alert('Paste a Google Apps Script web app URL first'); return; }
+      const list = loadSpecimens();
+      if (!list.length) { alert('No specimens to send'); return; }
+      fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(list)
+      }).then(() => alert('Sent (no-cors; check your Sheet for results)')).catch(() => alert('Send failed — check URL and Apps Script permissions'));
+    });
+
+    document.getElementById('printLabel').addEventListener('click', () => {
+      const list = loadSpecimens();
+      if (!list.length) { alert('No specimens'); return; }
+      const s = list[0];
+      const preview = document.getElementById('labelPreview');
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <strong>UP8 FieldForge</strong><br>
+        ${s.locality || ''} ${s.gps || ''}<br>
+        ${s.weight || ''} g · ${s.size || ''}<br>
+        ${s.ai ? s.ai.id + '<br>' + s.ai.disposition : ''}<br>
+        <small>${new Date(s.timestamp).toLocaleDateString()}</small>
+      `;
+      window.print();
     });
 
     document.querySelectorAll('.tab').forEach(tab => {
