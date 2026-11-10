@@ -106,6 +106,9 @@
     .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .photo-box { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center; }
     .photo-box img { max-width: 100%; max-height: 160px; border-radius: 6px; margin-top: 8px; }
+    .photo-box video { max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 8px; background: #000; }
+    .ledger-item video { max-width: 100%; max-height: 200px; border-radius: 6px; margin-top: 8px; background: #000; }
+    .video-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
     .label-preview {
       background: white; color: #111; padding: 16px; border-radius: 8px; max-width: 320px;
       font-family: system-ui; margin: 12px 0;
@@ -189,6 +192,14 @@
             <input type="file" id="photoSlab" accept="image/*">
             <img id="previewSlab" style="display:none">
           </div>
+        </div>
+
+        <label>Field Video (optional, ≤30s)</label>
+        <div class="photo-box">
+          <div>Clip / Rotate</div>
+          <input type="file" id="videoField" accept="video/*" capture="environment">
+          <video id="previewVideo" controls style="display:none"></video>
+          <div id="videoMeta" class="video-meta"></div>
         </div>
 
         <label>Diagnostic Tests</label>
@@ -278,9 +289,95 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = 'up8_fieldforge_specimens_v2';
+    const STORAGE_KEY = 'up8_fieldforge_specimens_v3';
+    const LEGACY_STORAGE_KEY = 'up8_fieldforge_specimens_v2';
+    const VIDEO_DB = 'up8_fieldforge_videos';
+    const VIDEO_STORE = 'videos';
+    const MAX_VIDEO_SECONDS = 30;
+    const WARN_VIDEO_BYTES = 50 * 1024 * 1024;
+
+    let pendingVideoFile = null;
+    let pendingVideoUrl = null;
+
+    function newSpecimenId() {
+      if (crypto.randomUUID) return 'ff-' + crypto.randomUUID();
+      return 'ff-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function openVideoDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(VIDEO_DB, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(VIDEO_STORE)) db.createObjectStore(VIDEO_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function putVideoBlob(id, blob) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).put(blob, id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function getVideoBlob(id) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readonly');
+        const req = tx.objectStore(VIDEO_STORE).get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function deleteVideoBlob(id) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function clearAllVideoBlobs() {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function migrateV2toV3() {
+      if (localStorage.getItem(STORAGE_KEY)) return;
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (!legacy) return;
+      try {
+        const list = JSON.parse(legacy) || [];
+        const migrated = list.map(s => {
+          if (!s.id) s.id = newSpecimenId();
+          if (s.videoName === undefined) s.videoName = null;
+          if (s.videoMime === undefined) s.videoMime = null;
+          if (s.videoSize === undefined) s.videoSize = null;
+          if (s.videoUrl === undefined) s.videoUrl = null;
+          return s;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      } catch (e) {
+        console.warn('FieldForge v2→v3 migration failed', e);
+      }
+    }
 
     function loadSpecimens() {
+      migrateV2toV3();
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
       catch { return []; }
     }
@@ -288,23 +385,88 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     }
 
-    function renderLedger() {
+    function exportPayload(list) {
+      return list.map(s => ({
+        id: s.id || null,
+        locality: s.locality || '',
+        gps: s.gps || '',
+        weight: s.weight || '',
+        size: s.size || '',
+        testNotes: s.testNotes || '',
+        description: s.description || '',
+        mohs: !!s.mohs,
+        mohsVal: s.mohsVal || '',
+        sg: !!s.sg,
+        sgVal: s.sgVal || '',
+        streak: !!s.streak,
+        streakVal: s.streakVal || '',
+        acid: !!s.acid,
+        uv: !!s.uv,
+        magnet: !!s.magnet,
+        candling: !!s.candling,
+        soundness: !!s.soundness,
+        cabNotes: s.cabNotes || '',
+        metrology: s.metrology || '',
+        photoRough: s.photoRough ? 'yes' : 'no',
+        photoSlab: s.photoSlab ? 'yes' : 'no',
+        videoName: s.videoName || '',
+        videoMime: s.videoMime || '',
+        videoSize: s.videoSize != null ? String(s.videoSize) : '',
+        videoUrl: s.videoUrl || '',
+        timestamp: s.timestamp || '',
+        ai: s.ai || null
+      }));
+    }
+
+    function clearPendingVideo() {
+      pendingVideoFile = null;
+      const video = document.getElementById('previewVideo');
+      if (pendingVideoUrl) {
+        URL.revokeObjectURL(pendingVideoUrl);
+        pendingVideoUrl = null;
+      }
+      video.removeAttribute('src');
+      video.style.display = 'none';
+      document.getElementById('videoMeta').textContent = '';
+      document.getElementById('videoField').value = '';
+    }
+
+    async function renderLedger() {
       const list = loadSpecimens();
       const container = document.getElementById('ledgerList');
       if (!list.length) {
         container.innerHTML = '<p class="meta">No specimens yet. Add one from Station A.</p>';
         return;
       }
-      container.innerHTML = list.map((s, i) => `
-        <div class="ledger-item">
-          <strong>${s.locality || 'Unknown'} ${s.gps ? '· ' + s.gps : ''}</strong><br>
+      container.innerHTML = list.map((s) => `
+        <div class="ledger-item" data-id="${s.id || ''}">
+          <strong>${s.id ? s.id + ' · ' : ''}${s.locality || 'Unknown'} ${s.gps ? '· ' + s.gps : ''}</strong><br>
           ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
           <span class="meta">${s.description || s.testNotes || 'No notes'}</span><br>
           ${s.ai ? `<span class="disposition disp-${s.ai.dispositionClass}">${s.ai.disposition}</span> · ~${s.ai.value}` : ''}
           ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
           ${s.photoSlab ? '<br><small>Slab photo attached</small>' : ''}
+          ${s.videoName || s.videoUrl ? `<br><small>Video: ${s.videoName || 'clip'}${s.videoSize ? ' · ' + Math.round(s.videoSize / 1024) + ' KB' : ''}${s.videoMime ? ' · ' + s.videoMime : ''}</small>` : ''}
+          ${s.videoUrl ? `<br><a href="${s.videoUrl}" target="_blank" rel="noopener">Open video link</a>` : ''}
+          <div class="ledger-video" data-vid="${s.id || ''}"></div>
         </div>
       `).join('');
+
+      for (const s of list) {
+        if (!s.id || (!s.videoName && !s.videoMime)) continue;
+        try {
+          const blob = await getVideoBlob(s.id);
+          if (!blob) continue;
+          const slot = container.querySelector(`.ledger-video[data-vid="${s.id}"]`);
+          if (!slot) continue;
+          const v = document.createElement('video');
+          v.controls = true;
+          v.src = URL.createObjectURL(blob);
+          slot.appendChild(v);
+        } catch (e) {
+          console.warn('Ledger video load failed', e);
+        }
+      }
     }
 
     function analyzeSpecimen(data) {
@@ -361,6 +523,46 @@
     setupPreview('photoRough', 'previewRough');
     setupPreview('photoSlab', 'previewSlab');
 
+    document.getElementById('videoField').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const meta = document.getElementById('videoMeta');
+      const video = document.getElementById('previewVideo');
+      if (pendingVideoUrl) {
+        URL.revokeObjectURL(pendingVideoUrl);
+        pendingVideoUrl = null;
+      }
+      pendingVideoFile = null;
+      if (!file) {
+        video.style.display = 'none';
+        meta.textContent = '';
+        return;
+      }
+      if (file.size > WARN_VIDEO_BYTES) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        if (!confirm(`Video is ${mb} MB (over 50 MB). Large clips may fill device storage. Continue?`)) {
+          e.target.value = '';
+          video.style.display = 'none';
+          meta.textContent = '';
+          return;
+        }
+      }
+      pendingVideoUrl = URL.createObjectURL(file);
+      video.src = pendingVideoUrl;
+      video.style.display = 'block';
+      meta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB · ${file.type || 'video'}`;
+      const checkDuration = () => {
+        if (!isFinite(video.duration) || video.duration === Infinity) return;
+        if (video.duration > MAX_VIDEO_SECONDS) {
+          alert(`Video is ${video.duration.toFixed(1)}s. Limit is ${MAX_VIDEO_SECONDS}s — choose a shorter clip.`);
+          clearPendingVideo();
+          return;
+        }
+        pendingVideoFile = file;
+        meta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB · ${file.type || 'video'} · ${video.duration.toFixed(1)}s`;
+      };
+      video.onloadedmetadata = checkDuration;
+    });
+
     document.getElementById('gpsBtn').addEventListener('click', () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
@@ -369,9 +571,15 @@
       } else alert('Geolocation not supported');
     });
 
-    document.getElementById('specimenForm').addEventListener('submit', (e) => {
+    document.getElementById('specimenForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (document.getElementById('videoField').files[0] && !pendingVideoFile) {
+        alert('Video still validating or exceeds the 30s limit.');
+        return;
+      }
+      const id = newSpecimenId();
       const data = {
+        id,
         locality: document.getElementById('locality').value,
         gps: document.getElementById('gps').value,
         weight: document.getElementById('weight').value,
@@ -393,9 +601,19 @@
         metrology: document.getElementById('metrology') ? document.getElementById('metrology').value : '',
         photoRough: document.getElementById('previewRough').src || null,
         photoSlab: document.getElementById('previewSlab').src || null,
+        videoName: pendingVideoFile ? pendingVideoFile.name : null,
+        videoMime: pendingVideoFile ? (pendingVideoFile.type || 'video/*') : null,
+        videoSize: pendingVideoFile ? pendingVideoFile.size : null,
+        videoUrl: null,
         timestamp: new Date().toISOString()
       };
       data.ai = analyzeSpecimen(data);
+      try {
+        if (pendingVideoFile) await putVideoBlob(id, pendingVideoFile);
+      } catch (err) {
+        alert('Could not store video in IndexedDB: ' + (err && err.message ? err.message : err));
+        return;
+      }
       const list = loadSpecimens();
       list.unshift(data);
       saveSpecimens(list);
@@ -403,6 +621,7 @@
       document.getElementById('specimenForm').reset();
       document.getElementById('previewRough').style.display = 'none';
       document.getElementById('previewSlab').style.display = 'none';
+      clearPendingVideo();
       renderLedger();
     });
 
@@ -428,7 +647,7 @@
     });
 
     document.getElementById('exportJson').addEventListener('click', () => {
-      const data = JSON.stringify(loadSpecimens(), null, 2);
+      const data = JSON.stringify(exportPayload(loadSpecimens()), null, 2);
       const blob = new Blob([data], {type: 'application/json'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -445,7 +664,7 @@
         method: 'POST',
         mode: 'no-cors',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(list)
+        body: JSON.stringify(exportPayload(list))
       }).then(() => alert('Sent (no-cors; check your Sheet for results)')).catch(() => alert('Send failed — check URL and Apps Script permissions'));
     });
 
@@ -457,6 +676,7 @@
       preview.style.display = 'block';
       preview.innerHTML = `
         <strong>UP8 FieldForge</strong><br>
+        ${s.id ? s.id + '<br>' : ''}
         ${s.locality || ''} ${s.gps || ''}<br>
         ${s.weight || ''} g · ${s.size || ''}<br>
         ${s.ai ? s.ai.id + '<br>' + s.ai.disposition : ''}<br>
@@ -475,9 +695,11 @@
       });
     });
 
-    document.getElementById('clearLedger').addEventListener('click', () => {
+    document.getElementById('clearLedger').addEventListener('click', async () => {
       if (confirm('Clear all local specimens? This cannot be undone.')) {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        try { await clearAllVideoBlobs(); } catch (e) { console.warn(e); }
         renderLedger();
       }
     });
