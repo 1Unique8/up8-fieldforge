@@ -12,9 +12,10 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Review PR with Grok
         env:
@@ -93,6 +94,12 @@ jobs:
             ERROR_MSG="$(jq -r '.error.message // .error // .message // empty' /tmp/xai-response.json 2>/dev/null || true)"
             if [ -z "$ERROR_MSG" ]; then
               ERROR_MSG="$(jq -c . /tmp/xai-response.json 2>/dev/null || echo 'no JSON body')"
+            fi
+            # Out of credits / rate limited is an account issue, not a code
+            # problem: warn and skip so the PR check doesn't go red.
+            if [ "$HTTP_CODE" = "402" ] || [ "$HTTP_CODE" = "429" ] || printf '%s' "$ERROR_MSG" | grep -qiE 'credit|billing|spending limit|quota'; then
+              echo "::warning::Grok review skipped: xAI API returned HTTP ${HTTP_CODE} (${ERROR_MSG}). Top up credits at console.x.ai to re-enable reviews."
+              exit 0
             fi
             echo "::error::xAI API request failed with HTTP ${HTTP_CODE}: ${ERROR_MSG}"
             exit 1

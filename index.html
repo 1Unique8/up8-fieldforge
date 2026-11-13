@@ -298,6 +298,20 @@
 
     let pendingVideoFile = null;
     let pendingVideoUrl = null;
+    let ledgerVideoUrls = [];
+
+    // Escape user-entered text before it goes into innerHTML.
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+    }
+    // Only allow http(s) links (blocks javascript: and data: URLs).
+    function safeUrl(v) {
+      if (!v) return '';
+      try {
+        const u = new URL(String(v), location.href);
+        return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '';
+      } catch { return ''; }
+    }
 
     function newSpecimenId() {
       if (crypto.randomUUID) return 'ff-' + crypto.randomUUID();
@@ -382,7 +396,14 @@
       catch { return []; }
     }
     function saveSpecimens(list) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        return true;
+      } catch (err) {
+        console.warn('FieldForge save failed', err);
+        alert('Could not save to this device (storage may be full). Export your ledger as JSON, then clear old entries.');
+        return false;
+      }
     }
 
     function exportPayload(list) {
@@ -434,21 +455,23 @@
     async function renderLedger() {
       const list = loadSpecimens();
       const container = document.getElementById('ledgerList');
+      ledgerVideoUrls.forEach(u => URL.revokeObjectURL(u));
+      ledgerVideoUrls = [];
       if (!list.length) {
         container.innerHTML = '<p class="meta">No specimens yet. Add one from Station A.</p>';
         return;
       }
       container.innerHTML = list.map((s) => `
-        <div class="ledger-item" data-id="${s.id || ''}">
-          <strong>${s.id ? s.id + ' · ' : ''}${s.locality || 'Unknown'} ${s.gps ? '· ' + s.gps : ''}</strong><br>
-          ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
-          <span class="meta">${s.description || s.testNotes || 'No notes'}</span><br>
-          ${s.ai ? `<span class="disposition disp-${s.ai.dispositionClass}">${s.ai.disposition}</span> · ~${s.ai.value}` : ''}
+        <div class="ledger-item" data-id="${esc(s.id)}">
+          <strong>${s.id ? esc(s.id) + ' · ' : ''}${esc(s.locality || 'Unknown')} ${s.gps ? '· ' + esc(s.gps) : ''}</strong><br>
+          ${esc(s.weight || '?')} g · ${esc(s.size || 'size n/a')}<br>
+          <span class="meta">${esc(s.description || s.testNotes || 'No notes')}</span><br>
+          ${s.ai ? `<span class="disposition disp-${esc(s.ai.dispositionClass)}">${esc(s.ai.disposition)}</span> · ~${esc(s.ai.value)}` : ''}
           ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
           ${s.photoSlab ? '<br><small>Slab photo attached</small>' : ''}
-          ${s.videoName || s.videoUrl ? `<br><small>Video: ${s.videoName || 'clip'}${s.videoSize ? ' · ' + Math.round(s.videoSize / 1024) + ' KB' : ''}${s.videoMime ? ' · ' + s.videoMime : ''}</small>` : ''}
-          ${s.videoUrl ? `<br><a href="${s.videoUrl}" target="_blank" rel="noopener">Open video link</a>` : ''}
-          <div class="ledger-video" data-vid="${s.id || ''}"></div>
+          ${s.videoName || s.videoUrl ? `<br><small>Video: ${esc(s.videoName || 'clip')}${s.videoSize ? ' · ' + Math.round(s.videoSize / 1024) + ' KB' : ''}${s.videoMime ? ' · ' + esc(s.videoMime) : ''}</small>` : ''}
+          ${safeUrl(s.videoUrl) ? `<br><a href="${esc(safeUrl(s.videoUrl))}" target="_blank" rel="noopener noreferrer">Open video link</a>` : ''}
+          <div class="ledger-video" data-vid="${esc(s.id)}"></div>
         </div>
       `).join('');
 
@@ -457,11 +480,12 @@
         try {
           const blob = await getVideoBlob(s.id);
           if (!blob) continue;
-          const slot = container.querySelector(`.ledger-video[data-vid="${s.id}"]`);
+          const slot = [...container.querySelectorAll('.ledger-video')].find(el => el.dataset.vid === s.id);
           if (!slot) continue;
           const v = document.createElement('video');
           v.controls = true;
           v.src = URL.createObjectURL(blob);
+          ledgerVideoUrls.push(v.src);
           slot.appendChild(v);
         } catch (e) {
           console.warn('Ledger video load failed', e);
@@ -599,8 +623,10 @@
         soundness: document.getElementById('soundness').checked,
         cabNotes: document.getElementById('cabNotes') ? document.getElementById('cabNotes').value : '',
         metrology: document.getElementById('metrology') ? document.getElementById('metrology').value : '',
-        photoRough: document.getElementById('previewRough').src || null,
-        photoSlab: document.getElementById('previewSlab').src || null,
+        // Store attachment flags only: full-size photo data URLs overflow
+        // localStorage (about 5 MB) and are not shown or exported anyway.
+        photoRough: !!document.getElementById('previewRough').getAttribute('src'),
+        photoSlab: !!document.getElementById('previewSlab').getAttribute('src'),
         videoName: pendingVideoFile ? pendingVideoFile.name : null,
         videoMime: pendingVideoFile ? (pendingVideoFile.type || 'video/*') : null,
         videoSize: pendingVideoFile ? pendingVideoFile.size : null,
@@ -616,11 +642,17 @@
       }
       const list = loadSpecimens();
       list.unshift(data);
-      saveSpecimens(list);
+      if (!saveSpecimens(list)) {
+        if (pendingVideoFile) { try { await deleteVideoBlob(id); } catch (err) { console.warn(err); } }
+        return;
+      }
       alert('Specimen saved to local ledger.');
       document.getElementById('specimenForm').reset();
-      document.getElementById('previewRough').style.display = 'none';
-      document.getElementById('previewSlab').style.display = 'none';
+      for (const imgId of ['previewRough', 'previewSlab']) {
+        const img = document.getElementById(imgId);
+        img.removeAttribute('src');
+        img.style.display = 'none';
+      }
       clearPendingVideo();
       renderLedger();
     });
@@ -639,9 +671,9 @@
       const preview = document.getElementById('aiPreview');
       preview.style.display = 'block';
       preview.innerHTML = `
-        <strong>Suggested ID:</strong> ${ai.id}<br>
-        <strong>Value range:</strong> ${ai.value}<br>
-        <strong>Disposition:</strong> <span class="disposition disp-${ai.dispositionClass}">${ai.disposition}</span><br>
+        <strong>Suggested ID:</strong> ${esc(ai.id)}<br>
+        <strong>Value range:</strong> ${esc(ai.value)}<br>
+        <strong>Disposition:</strong> <span class="disposition disp-${esc(ai.dispositionClass)}">${esc(ai.disposition)}</span><br>
         <span class="meta">SG formula reminder: weight in air / (weight in air − weight in water). Kerf typically 1.0–1.5mm for cabbing.</span>
       `;
     });
@@ -653,11 +685,13 @@
       a.href = URL.createObjectURL(blob);
       a.download = 'up8-fieldforge-specimens.json';
       a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     });
 
     document.getElementById('exportSheets').addEventListener('click', () => {
-      const url = document.getElementById('webhook').value;
+      const url = document.getElementById('webhook').value.trim();
       if (!url) { alert('Paste a Google Apps Script web app URL first'); return; }
+      if (!/^https:\/\//i.test(url)) { alert('The Apps Script web app URL must start with https://'); return; }
       const list = loadSpecimens();
       if (!list.length) { alert('No specimens to send'); return; }
       fetch(url, {
@@ -676,11 +710,11 @@
       preview.style.display = 'block';
       preview.innerHTML = `
         <strong>UP8 FieldForge</strong><br>
-        ${s.id ? s.id + '<br>' : ''}
-        ${s.locality || ''} ${s.gps || ''}<br>
-        ${s.weight || ''} g · ${s.size || ''}<br>
-        ${s.ai ? s.ai.id + '<br>' + s.ai.disposition : ''}<br>
-        <small>${new Date(s.timestamp).toLocaleDateString()}</small>
+        ${s.id ? esc(s.id) + '<br>' : ''}
+        ${esc(s.locality)} ${esc(s.gps)}<br>
+        ${esc(s.weight)} g · ${esc(s.size)}<br>
+        ${s.ai ? esc(s.ai.id) + '<br>' + esc(s.ai.disposition) : ''}<br>
+        <small>${s.timestamp && !isNaN(new Date(s.timestamp)) ? new Date(s.timestamp).toLocaleDateString() : ''}</small>
       `;
       window.print();
     });

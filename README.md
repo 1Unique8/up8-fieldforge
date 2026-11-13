@@ -29,7 +29,7 @@ For Google Sheets sync: deploy an Apps Script web app and paste the webhook URL 
 ## Integration with uniqueperspective8.com
 - Header and footer link back to the main site and education hub.
 - Specimens can later feed educational pages, "Know the cut" cabinet, or shop provenance stories.
-- Suggested hosting: `field.uniqueperspective8.com` or a `/fieldforge` path on the main repo / Pages.
+- Hosting: GitHub Pages from `main` with the custom domain in `CNAME` (`fieldforge.uniqueperspective8.com`).
 
 ## Possible next refinements
 - Real AI endpoint (prompt to Grok or local model) while keeping private data local
