@@ -1,1 +1,719 @@
-PLACEHOLDER_FULL_CONTENT_FROM_TMP_INDEX_FIXED
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Up8 FieldForge · Specimen Intake</title>
+  <meta name="description" content="Field specimen intake, diagnostic tests, dual photos, AI-assisted identification, valuation, disposition, printable labels, and Sheets export for Unique Perspective 8.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>8</text></svg>"><link rel="manifest" href="/manifest.json">
+  <style>
+    :root {
+      --bg: #0B0D10;
+      --surface: #161A20;
+      --surface-2: #1E232B;
+      --gold: #C9A227;
+      --gold-dim: #8A7420;
+      --text: #E8E6E3;
+      --text-muted: #9A9690;
+      --line: #2A3038;
+      --success: #4A9B6E;
+      --warn: #C47A3A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--gold); color: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 20px;
+    }
+    h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    .nav-links { display: flex; gap: 16px; font-size: 14px; }
+    .nav-links a { color: var(--gold); text-decoration: none; }
+    main { max-width: 960px; margin: 0 auto; padding: 20px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .tab {
+      padding: 10px 16px; background: none; border: none;
+      color: var(--text-muted); cursor: pointer; font-size: 15px;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    form, .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    label { display: block; margin: 12px 0 4px; font-size: 14px; color: var(--text-muted); }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; background: var(--surface-2);
+      border: 1px solid var(--line); border-radius: 8px; color: var(--text);
+      font-size: 15px;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .row, .row-3 { grid-template-columns: 1fr; } }
+    .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0; }
+    .test-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    button {
+      background: var(--gold); color: var(--bg); border: none; padding: 12px 20px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px;
+    }
+    button.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+    button:hover { opacity: 0.9; }
+    .ai-result {
+      background: var(--surface-2);
+      border-left: 3px solid var(--gold);
+      padding: 16px;
+      margin-top: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .disposition { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .disp-throw { background: #3A4A5A; }
+    .disp-edu { background: #2A4A3A; color: #8FCFB0; }
+    .disp-jewelry { background: #4A3A20; color: var(--gold); }
+    .disp-crush { background: #4A2A2A; color: #E8A0A0; }
+    .ledger-item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .ledger-item:hover { border-color: var(--gold-dim); }
+    .meta { font-size: 13px; color: var(--text-muted); }
+    .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .photo-box { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center; }
+    .photo-box img { max-width: 100%; max-height: 160px; border-radius: 6px; margin-top: 8px; }
+    .photo-box video { max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 8px; background: #000; }
+    .ledger-item video { max-width: 100%; max-height: 200px; border-radius: 6px; margin-top: 8px; background: #000; }
+    .video-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .label-preview {
+      background: white; color: #111; padding: 16px; border-radius: 8px; max-width: 320px;
+      font-family: system-ui; margin: 12px 0;
+    }
+    footer {
+      text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 13px;
+      border-top: 1px solid var(--line); margin-top: 40px;
+    }
+    footer a { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="https://uniqueperspective8.com" target="_blank">
+      <span class="logo">8</span>
+      <div>
+        <h1>Up8 FieldForge</h1>
+        <div style="font-size:12px;color:var(--text-muted)">Raw Origins · Refined Craft</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="https://uniqueperspective8.com" target="_blank">Site</a>
+      <a href="https://community.uniqueperspective8.com/education/" target="_blank">Education</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-tab="entry">Station A · Field</button>
+      <button class="tab" data-tab="workshop">Station B · Workshop</button>
+      <button class="tab" data-tab="ledger">Ledger</button>
+      <button class="tab" data-tab="ai">AI Assistant</button>
+      <button class="tab" data-tab="export">Export & Labels</button>
+    </div>
+
+    <div id="entry" class="panel active">
+      <form id="specimenForm">
+        <h2 style="margin-top:0">Station A — Field Mobile Intake</h2>
+        <p class="meta">Locality, GPS, dual photos (rough + slab), weight, size, diagnostic tests.</p>
+
+        <label>Locality / Site</label>
+        <select id="locality">
+          <option value="Similkameen">Similkameen River / Hedley area</option>
+          <option value="Okanagan">South Okanagan (Oliver / Osoyoos)</option>
+          <option value="Penticton">Penticton / Hwy 97 cuts</option>
+          <option value="Princeton">Princeton placer / claims</option>
+          <option value="Sumas">Sumas</option>
+          <option value="Other">Other / Custom GPS</option>
+        </select>
+
+        <div class="row">
+          <div>
+            <label>GPS Coordinates</label>
+            <input type="text" id="gps" placeholder="lat, lon or click capture">
+          </div>
+          <div style="align-self:end">
+            <button type="button" class="secondary" id="gpsBtn" style="width:100%">Capture GPS</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Weight (grams)</label>
+            <input type="number" id="weight" step="0.1" min="0" placeholder="e.g. 64.4">
+          </div>
+          <div>
+            <label>Size L × W × H (cm)</label>
+            <input type="text" id="size" placeholder="e.g. 5.2 × 3.8 × 2.1">
+          </div>
+        </div>
+
+        <label>Dual Photos (Rough + Slab)</label>
+        <div class="photos">
+          <div class="photo-box">
+            <div>Rough / Field</div>
+            <input type="file" id="photoRough" accept="image/*" capture="environment">
+            <img id="previewRough" style="display:none">
+          </div>
+          <div class="photo-box">
+            <div>Slab / Workshop</div>
+            <input type="file" id="photoSlab" accept="image/*">
+            <img id="previewSlab" style="display:none">
+          </div>
+        </div>
+
+        <label>Field Video (optional, ≤30s)</label>
+        <div class="photo-box">
+          <div>Clip / Rotate</div>
+          <input type="file" id="videoField" accept="video/*" capture="environment">
+          <video id="previewVideo" controls style="display:none"></video>
+          <div id="videoMeta" class="video-meta"></div>
+        </div>
+
+        <label>Diagnostic Tests</label>
+        <div class="tests">
+          <label class="test-item"><input type="checkbox" id="mohs"> Mohs hardness</label>
+          <label class="test-item"><input type="checkbox" id="sg"> Specific gravity</label>
+          <label class="test-item"><input type="checkbox" id="streak"> Streak</label>
+          <label class="test-item"><input type="checkbox" id="acid"> Acid reaction</label>
+          <label class="test-item"><input type="checkbox" id="uv"> UV fluorescence</label>
+          <label class="test-item"><input type="checkbox" id="magnet"> Magnetic response</label>
+          <label class="test-item"><input type="checkbox" id="candling"> Candling / translucency</label>
+          <label class="test-item"><input type="checkbox" id="soundness"> Soundness / fracture</label>
+        </div>
+
+        <div class="row-3">
+          <div><label>Mohs value</label><input type="text" id="mohsVal" placeholder="e.g. 6.5-7"></div>
+          <div><label>SG value</label><input type="text" id="sgVal" placeholder="e.g. 2.65"></div>
+          <div><label>Streak color</label><input type="text" id="streakVal" placeholder="white / brown"></div>
+        </div>
+
+        <label>Test notes / observations</label>
+        <textarea id="testNotes" rows="3" placeholder="Hardness ~6-7, no acid reaction, slight magnetism, white streak..."></textarea>
+        <label>Visual description / color / texture</label>
+        <textarea id="description" rows="2" placeholder="Banded gneiss with iron staining, rough exterior..."></textarea>
+
+        <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+          <button type="submit">Save Specimen</button>
+          <button type="button" class="secondary" id="analyzeBtn">Analyze with AI</button>
+        </div>
+        <div id="aiPreview" class="ai-result" style="display:none;"></div>
+      </form>
+    </div>
+
+    <div id="workshop" class="panel">
+      <div class="card">
+        <h2>Station B — Workshop Slabbing & Metrology</h2>
+        <p class="meta">Cabochon stencils, kerf notes, dimensional metrology, dual-image AI enhancement pipeline placeholder.</p>
+        <label>Cabochon / Cut notes</label>
+        <textarea id="cabNotes" rows="2" placeholder="Planned 30x22mm oval, kerf 1.2mm, template used..."></textarea>
+        <label>Metrology / dimensions after slab</label>
+        <input type="text" id="metrology" placeholder="Slab thickness 4.2mm, usable face 28x20mm">
+        <p class="meta">Photos from Station A are available in the ledger. AI enhancement formulas for Sheets can be added on export.</p>
+      </div>
+    </div>
+
+    <div id="ledger" class="panel">
+      <h2>Master Specimen Ledger</h2>
+      <p class="meta">Dual photos, weights, dimensions, tests, appraisals. Stored locally.</p>
+      <div id="ledgerList"></div>
+      <button class="secondary" id="clearLedger" style="margin-top:12px;">Clear All (local)</button>
+    </div>
+
+    <div id="ai" class="panel">
+      <div class="card">
+        <h2>AI Field Assistant / Copilot</h2>
+        <p>Suggests ID, value, disposition (throw it back / educational / jewelry / crush), plus kerf and SG formulas.</p>
+        <ul>
+          <li><strong>Possible identification</strong> from tests + description</li>
+          <li><strong>Rough value range</strong> (BC ethical field material + craft premium)</li>
+          <li><strong>Disposition</strong>: Throw it back · Educational specimen · Jewelry / lapidary · Crush / process</li>
+          <li>Mock SG formula and kerf guidance</li>
+        </ul>
+        <p class="meta">Local rules-based now. Extendable to external AI while keeping private data local.</p>
+      </div>
+    </div>
+
+    <div id="export" class="panel">
+      <div class="card">
+        <h2>Export, Sheets & Printable Labels</h2>
+        <p>Google Sheets webhook (paste Apps Script URL), JSON export, and printable drawer labels.</p>
+        <label>Sheets Webhook URL</label>
+        <input type="text" id="webhook" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="secondary" id="exportJson">Export JSON</button>
+          <button type="button" class="secondary" id="exportSheets">Send to Sheets</button>
+          <button type="button" class="secondary" id="printLabel">Print Label Preview</button>
+        </div>
+        <div id="labelPreview" class="label-preview" style="display:none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Part of the <a href="https://uniqueperspective8.com" target="_blank">Unique Perspective 8</a> ecosystem ·
+    <a href="https://github.com/1Unique8/up8-fieldforge" target="_blank">GitHub</a> ·
+    Raw Origins. Refined Craft.
+  </footer>
+
+  <script>
+    const STORAGE_KEY = 'up8_fieldforge_specimens_v3';
+    const LEGACY_STORAGE_KEY = 'up8_fieldforge_specimens_v2';
+    const VIDEO_DB = 'up8_fieldforge_videos';
+    const VIDEO_STORE = 'videos';
+    const MAX_VIDEO_SECONDS = 30;
+    const WARN_VIDEO_BYTES = 50 * 1024 * 1024;
+
+    let pendingVideoFile = null;
+    let pendingVideoUrl = null;
+
+    function newSpecimenId() {
+      if (crypto.randomUUID) return 'ff-' + crypto.randomUUID();
+      return 'ff-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function openVideoDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(VIDEO_DB, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(VIDEO_STORE)) db.createObjectStore(VIDEO_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function putVideoBlob(id, blob) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).put(blob, id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function getVideoBlob(id) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readonly');
+        const req = tx.objectStore(VIDEO_STORE).get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function deleteVideoBlob(id) {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function clearAllVideoBlobs() {
+      const db = await openVideoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(VIDEO_STORE, 'readwrite');
+        tx.objectStore(VIDEO_STORE).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function migrateV2toV3() {
+      if (localStorage.getItem(STORAGE_KEY)) return;
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (!legacy) return;
+      try {
+        const list = JSON.parse(legacy) || [];
+        const migrated = list.map(s => {
+          if (!s.id) s.id = newSpecimenId();
+          if (s.videoName === undefined) s.videoName = null;
+          if (s.videoMime === undefined) s.videoMime = null;
+          if (s.videoSize === undefined) s.videoSize = null;
+          if (s.videoUrl === undefined) s.videoUrl = null;
+          return s;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      } catch (e) {
+        console.warn('FieldForge v2→v3 migration failed', e);
+      }
+    }
+
+    function loadSpecimens() {
+      migrateV2toV3();
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveSpecimens(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function exportPayload(list) {
+      return list.map(s => ({
+        id: s.id || null,
+        locality: s.locality || '',
+        gps: s.gps || '',
+        weight: s.weight || '',
+        size: s.size || '',
+        testNotes: s.testNotes || '',
+        description: s.description || '',
+        mohs: !!s.mohs,
+        mohsVal: s.mohsVal || '',
+        sg: !!s.sg,
+        sgVal: s.sgVal || '',
+        streak: !!s.streak,
+        streakVal: s.streakVal || '',
+        acid: !!s.acid,
+        uv: !!s.uv,
+        magnet: !!s.magnet,
+        candling: !!s.candling,
+        soundness: !!s.soundness,
+        cabNotes: s.cabNotes || '',
+        metrology: s.metrology || '',
+        photoRough: s.photoRough ? 'yes' : 'no',
+        photoSlab: s.photoSlab ? 'yes' : 'no',
+        videoName: s.videoName || '',
+        videoMime: s.videoMime || '',
+        videoSize: s.videoSize != null ? String(s.videoSize) : '',
+        videoUrl: s.videoUrl || '',
+        timestamp: s.timestamp || '',
+        ai: s.ai || null
+      }));
+    }
+
+    function clearPendingVideo() {
+      pendingVideoFile = null;
+      const video = document.getElementById('previewVideo');
+      if (pendingVideoUrl) {
+        URL.revokeObjectURL(pendingVideoUrl);
+        pendingVideoUrl = null;
+      }
+      video.removeAttribute('src');
+      video.style.display = 'none';
+      document.getElementById('videoMeta').textContent = '';
+      document.getElementById('videoField').value = '';
+    }
+
+    async function renderLedger() {
+      const list = loadSpecimens();
+      const container = document.getElementById('ledgerList');
+      if (!list.length) {
+        container.innerHTML = '<p class="meta">No specimens yet. Add one from Station A.</p>';
+        return;
+      }
+      container.innerHTML = list.map((s) => `
+        <div class="ledger-item" data-id="${s.id || ''}">
+          <strong>${s.id ? s.id + ' · ' : ''}${s.locality || 'Unknown'} ${s.gps ? '· ' + s.gps : ''}</strong><br>
+          ${s.weight || '?'} g · ${s.size || 'size n/a'}<br>
+          <span class="meta">${s.description || s.testNotes || 'No notes'}</span><br>
+          ${s.ai ? `<span class="disposition disp-${s.ai.dispositionClass}">${s.ai.disposition}</span> · ~${s.ai.value}` : ''}
+          ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
+          ${s.photoSlab ? '<br><small>Slab photo attached</small>' : ''}
+          ${s.videoName || s.videoUrl ? `<br><small>Video: ${s.videoName || 'clip'}${s.videoSize ? ' · ' + Math.round(s.videoSize / 1024) + ' KB' : ''}${s.videoMime ? ' · ' + s.videoMime : ''}</small>` : ''}
+          ${s.videoUrl ? `<br><a href="${s.videoUrl}" target="_blank" rel="noopener">Open video link</a>` : ''}
+          <div class="ledger-video" data-vid="${s.id || ''}"></div>
+        </div>
+      `).join('');
+
+      for (const s of list) {
+        if (!s.id || (!s.videoName && !s.videoMime)) continue;
+        try {
+          const blob = await getVideoBlob(s.id);
+          if (!blob) continue;
+          const slot = container.querySelector(`.ledger-video[data-vid="${s.id}"]`);
+          if (!slot) continue;
+          const v = document.createElement('video');
+          v.controls = true;
+          v.src = URL.createObjectURL(blob);
+          slot.appendChild(v);
+        } catch (e) {
+          console.warn('Ledger video load failed', e);
+        }
+      }
+    }
+
+    function analyzeSpecimen(data) {
+      const notes = ((data.testNotes || '') + ' ' + (data.description || '')).toLowerCase();
+      let id = 'Undetermined field stone';
+      let value = 'CAD $5–15 (educational / raw)';
+      let disposition = 'Throw it back';
+      let dispositionClass = 'throw';
+
+      if (notes.includes('quartz') || notes.includes('clear') || notes.includes('crystal')) {
+        id = 'Quartz / silica variety (probable)';
+        value = 'CAD $12–35';
+        disposition = 'Jewelry / lapidary';
+        dispositionClass = 'jewelry';
+      } else if (notes.includes('gneiss') || notes.includes('banded') || notes.includes('metamorphic')) {
+        id = 'Banded gneiss / metamorphic (probable)';
+        value = 'CAD $8–22';
+        disposition = 'Educational specimen';
+        dispositionClass = 'edu';
+      } else if (notes.includes('jasper') || notes.includes('chalcedony') || notes.includes('agate')) {
+        id = 'Chalcedony / jasper / agate (possible)';
+        value = 'CAD $15–45';
+        disposition = 'Jewelry / lapidary';
+        dispositionClass = 'jewelry';
+      } else if (data.weight && parseFloat(data.weight) > 200) {
+        id = 'Larger field specimen';
+        value = 'CAD $10–30';
+        disposition = 'Educational specimen';
+        dispositionClass = 'edu';
+      } else if (notes.includes('iron') || notes.includes('magnetic') || data.magnet) {
+        id = 'Iron-bearing / magnetic rock';
+        value = 'CAD $6–18';
+        disposition = 'Crush / process or educational';
+        dispositionClass = 'crush';
+      }
+
+      return { id, value, disposition, dispositionClass };
+    }
+
+    // Photo previews
+    function setupPreview(inputId, imgId) {
+      document.getElementById(inputId).addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = document.getElementById(imgId);
+          img.src = reader.result;
+          img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    setupPreview('photoRough', 'previewRough');
+    setupPreview('photoSlab', 'previewSlab');
+
+    document.getElementById('videoField').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const meta = document.getElementById('videoMeta');
+      const video = document.getElementById('previewVideo');
+      if (pendingVideoUrl) {
+        URL.revokeObjectURL(pendingVideoUrl);
+        pendingVideoUrl = null;
+      }
+      pendingVideoFile = null;
+      if (!file) {
+        video.style.display = 'none';
+        meta.textContent = '';
+        return;
+      }
+      if (file.size > WARN_VIDEO_BYTES) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        if (!confirm(`Video is ${mb} MB (over 50 MB). Large clips may fill device storage. Continue?`)) {
+          e.target.value = '';
+          video.style.display = 'none';
+          meta.textContent = '';
+          return;
+        }
+      }
+      pendingVideoUrl = URL.createObjectURL(file);
+      video.src = pendingVideoUrl;
+      video.style.display = 'block';
+      meta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB · ${file.type || 'video'}`;
+      const checkDuration = () => {
+        if (!isFinite(video.duration) || video.duration === Infinity) return;
+        if (video.duration > MAX_VIDEO_SECONDS) {
+          alert(`Video is ${video.duration.toFixed(1)}s. Limit is ${MAX_VIDEO_SECONDS}s — choose a shorter clip.`);
+          clearPendingVideo();
+          return;
+        }
+        pendingVideoFile = file;
+        meta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB · ${file.type || 'video'} · ${video.duration.toFixed(1)}s`;
+      };
+      video.onloadedmetadata = checkDuration;
+    });
+
+    document.getElementById('gpsBtn').addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          document.getElementById('gps').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+        }, () => alert('GPS unavailable or denied'));
+      } else alert('Geolocation not supported');
+    });
+
+    document.getElementById('specimenForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (document.getElementById('videoField').files[0] && !pendingVideoFile) {
+        alert('Video still validating or exceeds the 30s limit.');
+        return;
+      }
+      const id = newSpecimenId();
+      const data = {
+        id,
+        locality: document.getElementById('locality').value,
+        gps: document.getElementById('gps').value,
+        weight: document.getElementById('weight').value,
+        size: document.getElementById('size').value,
+        testNotes: document.getElementById('testNotes').value,
+        description: document.getElementById('description').value,
+        mohs: document.getElementById('mohs').checked,
+        mohsVal: document.getElementById('mohsVal').value,
+        sg: document.getElementById('sg').checked,
+        sgVal: document.getElementById('sgVal').value,
+        streak: document.getElementById('streak').checked,
+        streakVal: document.getElementById('streakVal').value,
+        acid: document.getElementById('acid').checked,
+        uv: document.getElementById('uv').checked,
+        magnet: document.getElementById('magnet').checked,
+        candling: document.getElementById('candling').checked,
+        soundness: document.getElementById('soundness').checked,
+        cabNotes: document.getElementById('cabNotes') ? document.getElementById('cabNotes').value : '',
+        metrology: document.getElementById('metrology') ? document.getElementById('metrology').value : '',
+        photoRough: document.getElementById('previewRough').src || null,
+        photoSlab: document.getElementById('previewSlab').src || null,
+        videoName: pendingVideoFile ? pendingVideoFile.name : null,
+        videoMime: pendingVideoFile ? (pendingVideoFile.type || 'video/*') : null,
+        videoSize: pendingVideoFile ? pendingVideoFile.size : null,
+        videoUrl: null,
+        timestamp: new Date().toISOString()
+      };
+      data.ai = analyzeSpecimen(data);
+      try {
+        if (pendingVideoFile) await putVideoBlob(id, pendingVideoFile);
+      } catch (err) {
+        alert('Could not store video in IndexedDB: ' + (err && err.message ? err.message : err));
+        return;
+      }
+      const list = loadSpecimens();
+      list.unshift(data);
+      saveSpecimens(list);
+      alert('Specimen saved to local ledger.');
+      document.getElementById('specimenForm').reset();
+      document.getElementById('previewRough').style.display = 'none';
+      document.getElementById('previewSlab').style.display = 'none';
+      clearPendingVideo();
+      renderLedger();
+    });
+
+    document.getElementById('analyzeBtn').addEventListener('click', () => {
+      const data = {
+        locality: document.getElementById('locality').value,
+        weight: document.getElementById('weight').value,
+        size: document.getElementById('size').value,
+        testNotes: document.getElementById('testNotes').value,
+        description: document.getElementById('description').value,
+        mohs: document.getElementById('mohs').checked,
+        magnet: document.getElementById('magnet').checked
+      };
+      const ai = analyzeSpecimen(data);
+      const preview = document.getElementById('aiPreview');
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <strong>Suggested ID:</strong> ${ai.id}<br>
+        <strong>Value range:</strong> ${ai.value}<br>
+        <strong>Disposition:</strong> <span class="disposition disp-${ai.dispositionClass}">${ai.disposition}</span><br>
+        <span class="meta">SG formula reminder: weight in air / (weight in air − weight in water). Kerf typically 1.0–1.5mm for cabbing.</span>
+      `;
+    });
+
+    document.getElementById('exportJson').addEventListener('click', () => {
+      const data = JSON.stringify(exportPayload(loadSpecimens()), null, 2);
+      const blob = new Blob([data], {type: 'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'up8-fieldforge-specimens.json';
+      a.click();
+    });
+
+    document.getElementById('exportSheets').addEventListener('click', () => {
+      const url = document.getElementById('webhook').value;
+      if (!url) { alert('Paste a Google Apps Script web app URL first'); return; }
+      const list = loadSpecimens();
+      if (!list.length) { alert('No specimens to send'); return; }
+      fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(exportPayload(list))
+      }).then(() => alert('Sent (no-cors; check your Sheet for results)')).catch(() => alert('Send failed — check URL and Apps Script permissions'));
+    });
+
+    document.getElementById('printLabel').addEventListener('click', () => {
+      const list = loadSpecimens();
+      if (!list.length) { alert('No specimens'); return; }
+      const s = list[0];
+      const preview = document.getElementById('labelPreview');
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <strong>UP8 FieldForge</strong><br>
+        ${s.id ? s.id + '<br>' : ''}
+        ${s.locality || ''} ${s.gps || ''}<br>
+        ${s.weight || ''} g · ${s.size || ''}<br>
+        ${s.ai ? s.ai.id + '<br>' + s.ai.disposition : ''}<br>
+        <small>${new Date(s.timestamp).toLocaleDateString()}</small>
+      `;
+      window.print();
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'ledger') renderLedger();
+      });
+    });
+
+    document.getElementById('clearLedger').addEventListener('click', async () => {
+      if (confirm('Clear all local specimens? This cannot be undone.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        try { await clearAllVideoBlobs(); } catch (e) { console.warn(e); }
+        renderLedger();
+      }
+    });
+
+    renderLedger();
+  </script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("FieldForge SW registered", reg.scope))
+        .catch(err => console.error("SW registration failed", err));
+    });
+  }
+</script>
+</body>
+</html>
