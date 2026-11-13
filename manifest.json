@@ -1,0 +1,16 @@
+{
+  "name": "Up8 FieldForge",
+  "short_name": "FieldForge",
+  "description": "Specimen intake progressive web app for field capture, workshop metrology, and local ledger.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0D10",
+  "theme_color": "#C9A227",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>8</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
