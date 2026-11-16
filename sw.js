@@ -7,14 +7,16 @@ if (workbox) {
 
   // Precache the app shell
   workbox.precaching.precacheAndRoute([
-    { url: '/', revision: '1' },
-    { url: '/index.html', revision: '1' }
+    { url: '/', revision: '2' },
+    { url: '/index.html', revision: '2' }
   ]);
 
-  // Navigation requests: CacheFirst so the shell opens offline
+  // Navigation requests: NetworkFirst so app updates reach installed users,
+  // falling back to the cached shell when offline (CacheFirst never refreshed it).
   workbox.routing.registerRoute(
     ({ request }) => request.mode === 'navigate',
-    new workbox.strategies.CacheFirst({
+    new workbox.strategies.NetworkFirst({
+      networkTimeoutSeconds: 4,
       cacheName: 'fieldforge-shell',
       plugins: [
         new workbox.cacheableResponse.CacheableResponsePlugin({
