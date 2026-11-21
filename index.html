@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Up8 FieldForge · Specimen Intake</title>
-  <meta name="description" content="Field specimen intake, diagnostic tests, dual photos, AI-assisted identification, valuation, disposition, printable labels, and Sheets export for Unique Perspective 8.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>8</text></svg>"><link rel="manifest" href="/manifest.json">
+  <meta name="description" content="Field specimen intake, diagnostic tests, dual photos, a local rules-based identification assistant, valuation, disposition, printable labels, and Sheets export for Unique Perspective 8.">
+  <meta name="theme-color" content="#CFB53B">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
   <style>
     :root {
       --bg: #0B0D10;
       --surface: #161A20;
       --surface-2: #1E232B;
-      --gold: #C9A227;
-      --gold-dim: #8A7420;
-      --text: #E8E6E3;
-      --text-muted: #9A9690;
-      --line: #2A3038;
+      --gold: #CFB53B;
+      --gold-dim: #8A7A28;
+      --text: #FFFFFF;
+      --text-muted: #71797E;
+      --line: #2A2E33;
       --success: #4A9B6E;
       --warn: #C47A3A;
     }
@@ -140,7 +145,7 @@
       <button class="tab active" data-tab="entry">Station A · Field</button>
       <button class="tab" data-tab="workshop">Station B · Workshop</button>
       <button class="tab" data-tab="ledger">Ledger</button>
-      <button class="tab" data-tab="ai">AI Assistant</button>
+      <button class="tab" data-tab="ai">Field assistant</button>
       <button class="tab" data-tab="export">Export & Labels</button>
     </div>
 
@@ -185,12 +190,12 @@
           <div class="photo-box">
             <div>Rough / Field</div>
             <input type="file" id="photoRough" accept="image/*" capture="environment">
-            <img id="previewRough" style="display:none">
+            <img id="previewRough" alt="Preview of the rough specimen photo" style="display:none">
           </div>
           <div class="photo-box">
             <div>Slab / Workshop</div>
             <input type="file" id="photoSlab" accept="image/*">
-            <img id="previewSlab" style="display:none">
+            <img id="previewSlab" alt="Preview of the slab specimen photo" style="display:none">
           </div>
         </div>
 
@@ -227,7 +232,7 @@
 
         <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
           <button type="submit">Save Specimen</button>
-          <button type="button" class="secondary" id="analyzeBtn">Analyze with AI</button>
+          <button type="button" class="secondary" id="analyzeBtn">Suggest an ID</button>
         </div>
         <div id="aiPreview" class="ai-result" style="display:none;"></div>
       </form>
@@ -236,12 +241,12 @@
     <div id="workshop" class="panel">
       <div class="card">
         <h2>Station B — Workshop Slabbing & Metrology</h2>
-        <p class="meta">Cabochon stencils, kerf notes, dimensional metrology, dual-image AI enhancement pipeline placeholder.</p>
+        <p class="meta">Cabochon stencils, kerf notes, dimensional metrology, and workshop notes. Photos from Station A stay on this device.</p>
         <label>Cabochon / Cut notes</label>
         <textarea id="cabNotes" rows="2" placeholder="Planned 30x22mm oval, kerf 1.2mm, template used..."></textarea>
         <label>Metrology / dimensions after slab</label>
         <input type="text" id="metrology" placeholder="Slab thickness 4.2mm, usable face 28x20mm">
-        <p class="meta">Photos from Station A are available in the ledger. AI enhancement formulas for Sheets can be added on export.</p>
+        <p class="meta">Photos from Station A are available in the ledger.</p>
       </div>
     </div>
 
@@ -254,7 +259,7 @@
 
     <div id="ai" class="panel">
       <div class="card">
-        <h2>AI Field Assistant / Copilot</h2>
+        <h2>Local field assistant</h2>
         <p>Suggests ID, value, disposition (throw it back / educational / jewelry / crush), plus kerf and SG formulas.</p>
         <ul>
           <li><strong>Possible identification</strong> from tests + description</li>
@@ -262,7 +267,7 @@
           <li><strong>Disposition</strong>: Throw it back · Educational specimen · Jewelry / lapidary · Crush / process</li>
           <li>Mock SG formula and kerf guidance</li>
         </ul>
-        <p class="meta">Local rules-based now. Extendable to external AI while keeping private data local.</p>
+        <p class="meta">Rules-based suggestions from the tests and notes you enter. Nothing leaves this device, and there is no external AI call.</p>
       </div>
     </div>
 

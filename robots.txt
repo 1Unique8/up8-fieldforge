@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# Temporary noindex. Public vs staff-only access for this intake app is still undecided.
