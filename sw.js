@@ -1,18 +1,22 @@
-// Minimal Workbox service worker for FieldForge single-file PWA
-// Import Workbox from CDN
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.1.0/workbox-sw.js');
+// FieldForge intake service worker — Workbox is self-hosted in vendor/workbox/
+importScripts('vendor/workbox/workbox-sw.js');
 
 if (workbox) {
+  workbox.setConfig({ modulePathPrefix: 'vendor/workbox/' });
   console.log('Workbox loaded');
 
-  // Precache the app shell
   workbox.precaching.precacheAndRoute([
-    { url: '/', revision: '2' },
-    { url: '/index.html', revision: '2' }
+    { url: '/', revision: '3' },
+    { url: '/index.html', revision: '3' },
+    { url: '/manifest.json', revision: '3' },
+    { url: '/favicon.ico', revision: '3' },
+    { url: '/assets/icon-192.png', revision: '3' },
+    { url: '/assets/icon-512.png', revision: '3' },
+    { url: '/assets/apple-touch-icon.png', revision: '3' }
   ]);
 
   // Navigation requests: NetworkFirst so app updates reach installed users,
-  // falling back to the cached shell when offline (CacheFirst never refreshed it).
+  // falling back to the cached shell when offline.
   workbox.routing.registerRoute(
     ({ request }) => request.mode === 'navigate',
     new workbox.strategies.NetworkFirst({
@@ -26,7 +30,6 @@ if (workbox) {
     })
   );
 
-  // Skip waiting and claim clients so updates apply quickly
   workbox.core.skipWaiting();
   workbox.core.clientsClaim();
 } else {
