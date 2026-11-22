@@ -167,6 +167,9 @@
           <option value="Other">Other / Custom GPS</option>
         </select>
 
+        <label>Rock ID (optional)</label>
+        <input type="text" id="rockId" placeholder="e.g. UP8-PEN-011 · leave blank and the next number is assigned at upload" autocapitalize="characters" pattern="^UP8-[A-Z/]+-[0-9]{3,}$">
+
         <div class="row">
           <div>
             <label>GPS Coordinates</label>
@@ -278,9 +281,11 @@
       <div class="card">
         <h2>Export, Sheets & Printable Labels</h2>
         <p>Google Sheets webhook (paste Apps Script URL), JSON export, and printable drawer labels.</p>
+        <p class="meta">"Send photos to Drive inbox" packs every specimen not sent yet (data + rough/slab photos) into one file. Save it to <strong>01_Intake_Media › _Inbox</strong> in Google Drive; Fieldforge removes the backgrounds, files the JPGs under each Rock ID and logs the Field Intake row.</p>
         <label>Sheets Webhook URL</label>
         <input type="text" id="webhook" placeholder="https://script.google.com/macros/s/.../exec">
         <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="exportDrive">Send photos to Drive inbox</button>
           <button type="button" class="secondary" id="exportJson">Export JSON</button>
           <button type="button" class="secondary" id="exportSheets">Send to Sheets</button>
           <button type="button" class="secondary" id="printLabel">Print Label Preview</button>
@@ -378,6 +383,57 @@
       });
     }
 
+    // Photos: downscaled JPEGs kept in IndexedDB (localStorage is too small),
+    // so they can be bundled for the Drive intake inbox later.
+    const PHOTO_DB = 'up8_fieldforge_photos';
+    const PHOTO_STORE = 'photos';
+    const PHOTO_MAX_EDGE = 2400;
+    function openPhotoDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(PHOTO_DB, 1);
+        req.onupgradeneeded = () => {
+          if (!req.result.objectStoreNames.contains(PHOTO_STORE)) req.result.createObjectStore(PHOTO_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function photoTx(mode, fn) {
+      const db = await openPhotoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(PHOTO_STORE, mode);
+        const out = fn(tx.objectStore(PHOTO_STORE));
+        tx.oncomplete = () => resolve(out && 'result' in out ? out.result : undefined);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+    const putPhoto = (key, blob) => photoTx('readwrite', st => st.put(blob, key));
+    const getPhoto = (key) => photoTx('readonly', st => st.get(key));
+    const clearPhotos = () => photoTx('readwrite', st => st.clear());
+    // Re-encode to a JPEG no larger than PHOTO_MAX_EDGE; falls back to the original file.
+    async function shrinkPhoto(file) {
+      try {
+        const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        const k = Math.min(1, PHOTO_MAX_EDGE / Math.max(bmp.width, bmp.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+        const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+        return blob || file;
+      } catch (e) {
+        console.warn('Photo resize failed, keeping original', e);
+        return file;
+      }
+    }
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(blob);
+      });
+    }
+
     function migrateV2toV3() {
       if (localStorage.getItem(STORAGE_KEY)) return;
       const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -417,6 +473,7 @@
     function exportPayload(list) {
       return list.map(s => ({
         id: s.id || null,
+        rockId: s.rockId || '',
         locality: s.locality || '',
         gps: s.gps || '',
         weight: s.weight || '',
@@ -471,12 +528,13 @@
       }
       container.innerHTML = list.map((s) => `
         <div class="ledger-item" data-id="${esc(s.id)}">
-          <strong>${s.id ? esc(s.id) + ' · ' : ''}${esc(s.locality || 'Unknown')} ${s.gps ? '· ' + esc(s.gps) : ''}</strong><br>
+          <strong>${s.rockId ? esc(s.rockId) + ' · ' : (s.id ? esc(s.id) + ' · ' : '')}${esc(s.locality || 'Unknown')} ${s.gps ? '· ' + esc(s.gps) : ''}</strong><br>
           ${esc(s.weight || '?')} g · ${esc(s.size || 'size n/a')}<br>
           <span class="meta">${esc(s.description || s.testNotes || 'No notes')}</span><br>
           ${s.ai ? `<span class="disposition disp-${esc(s.ai.dispositionClass)}">${esc(s.ai.disposition)}</span> · ~${esc(s.ai.value)}` : ''}
           ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
           ${s.photoSlab ? '<br><small>Slab photo attached</small>' : ''}
+          ${s.bundledAt ? `<br><small>Sent to Drive inbox ${esc(new Date(s.bundledAt).toLocaleString())}</small>` : ''}
           ${s.videoName || s.videoUrl ? `<br><small>Video: ${esc(s.videoName || 'clip')}${s.videoSize ? ' · ' + Math.round(s.videoSize / 1024) + ' KB' : ''}${s.videoMime ? ' · ' + esc(s.videoMime) : ''}</small>` : ''}
           ${safeUrl(s.videoUrl) ? `<br><a href="${esc(safeUrl(s.videoUrl))}" target="_blank" rel="noopener noreferrer">Open video link</a>` : ''}
           <div class="ledger-video" data-vid="${esc(s.id)}"></div>
@@ -613,6 +671,7 @@
       const data = {
         id,
         locality: document.getElementById('locality').value,
+        rockId: (document.getElementById('rockId').value || '').trim().toUpperCase(),
         gps: document.getElementById('gps').value,
         weight: document.getElementById('weight').value,
         size: document.getElementById('size').value,
@@ -639,9 +698,19 @@
         videoMime: pendingVideoFile ? (pendingVideoFile.type || 'video/*') : null,
         videoSize: pendingVideoFile ? pendingVideoFile.size : null,
         videoUrl: null,
+        bundledAt: null,
         timestamp: new Date().toISOString()
       };
       data.ai = analyzeSpecimen(data);
+      try {
+        for (const [kind, inputId] of [['rough', 'photoRough'], ['slab', 'photoSlab']]) {
+          const f = document.getElementById(inputId).files[0];
+          if (f) await putPhoto(`${id}:${kind}`, await shrinkPhoto(f));
+        }
+      } catch (err) {
+        alert('Could not store photos on this device: ' + (err && err.message ? err.message : err));
+        return;
+      }
       try {
         if (pendingVideoFile) await putVideoBlob(id, pendingVideoFile);
       } catch (err) {
@@ -696,6 +765,49 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     });
 
+    document.getElementById('exportDrive').addEventListener('click', async () => {
+      const list = loadSpecimens();
+      const pending = list.filter(s => !s.bundledAt);
+      if (!pending.length) { alert('Every specimen has already been sent.'); return; }
+      const payload = exportPayload(pending);
+      for (const p of payload) {
+        p.photos = {};
+        for (const kind of ['rough', 'slab']) {
+          try {
+            const blob = await getPhoto(`${p.id}:${kind}`);
+            if (blob) p.photos[kind] = await blobToDataUrl(blob);
+          } catch (e) { console.warn('Photo read failed', e); }
+        }
+      }
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const name = `up8-intake-${stamp}.json`;
+      const file = new File([JSON.stringify({ schema: 'up8-fieldforge-bundle/1', createdAt: new Date().toISOString(), specimens: payload })], name, { type: 'application/json' });
+      let delivered = false;
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'FieldForge intake bundle' });
+          delivered = true;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn('Share failed, downloading instead', e);
+      }
+      if (!delivered) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(file);
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        delivered = confirm('Bundle downloaded. Mark these specimens as sent once it is saved in the Drive _Inbox folder?');
+      }
+      if (delivered) {
+        const now = new Date().toISOString();
+        const ids = new Set(pending.map(s => s.id));
+        saveSpecimens(list.map(s => ids.has(s.id) ? { ...s, bundledAt: now } : s));
+        renderLedger();
+      }
+    });
+
     document.getElementById('exportSheets').addEventListener('click', () => {
       const url = document.getElementById('webhook').value.trim();
       if (!url) { alert('Paste a Google Apps Script web app URL first'); return; }
@@ -742,6 +854,7 @@
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(LEGACY_STORAGE_KEY);
         try { await clearAllVideoBlobs(); } catch (e) { console.warn(e); }
+        try { await clearPhotos(); } catch (e) { console.warn(e); }
         renderLedger();
       }
     });

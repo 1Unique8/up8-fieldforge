@@ -21,6 +21,12 @@ All data stays local in the browser unless you export. Ideal for offline field w
 
 For Google Sheets sync: deploy an Apps Script web app and paste the webhook URL in the Export tab. Exports send string metadata only (photo yes/no flags; `videoName`, `videoMime`, `videoSize`, `videoUrl`) — video bytes stay in the browser IndexedDB keyed by specimen `id`.
 
+### Photos and the Drive intake inbox
+- Rough and slab photos are re-encoded on the device to JPEG (max 2400 px) and kept in IndexedDB (`up8_fieldforge_photos`, keys `<id>:rough` / `<id>:slab`).
+- Optional **Rock ID** field (`UP8-<LOC>-NNN`); leave blank and the next free number for the locality is assigned when the bundle is processed.
+- **Send photos to Drive inbox** (Export tab) packs every specimen not yet sent into one `up8-intake-<time>.json` (`schema: up8-fieldforge-bundle/1`, photos as data URLs) and opens the share sheet (or downloads). Save it to Google Drive › `01_Intake_Media/_Inbox`.
+- A box-side job then removes backgrounds locally (no cloud AI), saves JPGs on brand black `#0B0D10`, files them under `UP8 Specimen Photos + Vids/<Rock_ID>/`, and logs a row in the **Field Intake** tab of the COMPLETE sheet. The app itself makes no network calls for this.
+
 ### Specimen video notes
 - Capture or upload via Station A (`accept="video/*"`, max duration 30s; warn if file > 50 MB).
 - Blob stored in IndexedDB (`up8_fieldforge_videos`) under the specimen `id`; ledger plays it locally and can show an optional external `videoUrl`.
