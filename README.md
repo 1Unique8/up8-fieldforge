@@ -5,7 +5,7 @@
 Single-file progressive web app for field specimen intake, dual-station photography, diagnostic tests, specimen ledger with lineage, AI copilot, printable labels, and Google Sheets export.
 
 ## Features
-- **Station A — Field Mobile**: locality selector (Similkameen, Hedley, Okanagan, Sumas, Princeton, custom), GPS capture, dual photo upload (rough + slab), optional field video (≤30s; stored in IndexedDB, not localStorage), weight, size, visual description
+- **Station A — Field Mobile**: locality selector (PEN, PRI, OLI, SUM, SIM/TUL, OKAN, YEL, HED, custom), GPS capture, dual photo upload (rough + slab), optional field video (≤30s; stored in IndexedDB, not localStorage), weight, size, visual description
 - **Station B — Workshop**: cabochon stencil / metrology notes, kerf guidance, dimensional tracking after slabbing
 - Diagnostic protocol: Mohs (with value), SG (with value), streak (with color), acid, UV, magnet, candling, soundness + notes
 - Master specimen ledger with dual photos, optional video player, weights, dimensions, tests, appraisals, localStorage (v3) + IndexedDB video blobs, and v2→v3 migration

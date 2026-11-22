@@ -6,13 +6,13 @@ if (workbox) {
   console.log('Workbox loaded');
 
   workbox.precaching.precacheAndRoute([
-    { url: '/', revision: '3' },
-    { url: '/index.html', revision: '3' },
-    { url: '/manifest.json', revision: '3' },
-    { url: '/favicon.ico', revision: '3' },
-    { url: '/assets/icon-192.png', revision: '3' },
-    { url: '/assets/icon-512.png', revision: '3' },
-    { url: '/assets/apple-touch-icon.png', revision: '3' }
+    { url: '/', revision: '4' },
+    { url: '/index.html', revision: '4' },
+    { url: '/manifest.json', revision: '4' },
+    { url: '/favicon.ico', revision: '4' },
+    { url: '/assets/icon-192.png', revision: '4' },
+    { url: '/assets/icon-512.png', revision: '4' },
+    { url: '/assets/apple-touch-icon.png', revision: '4' }
   ]);
 
   // Navigation requests: NetworkFirst so app updates reach installed users,
