@@ -78,6 +78,8 @@
     }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .size-dims { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .size-dims input { min-width: 0; }
     @media (max-width: 600px) { .row, .row-3 { grid-template-columns: 1fr; } }
     .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0; }
     .test-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
@@ -186,8 +188,12 @@
             <input type="number" id="weight" step="0.1" min="0" placeholder="e.g. 64.4">
           </div>
           <div>
-            <label>Size L × W × H (cm)</label>
-            <input type="text" id="size" placeholder="e.g. 5.2 × 3.8 × 2.1">
+            <label>Size L × W × H (in)</label>
+            <div class="size-dims">
+              <input type="number" id="sizeL" step="0.01" min="0" max="120" placeholder="e.g. 2.05" inputmode="decimal" aria-label="Length in inches">
+              <input type="number" id="sizeW" step="0.01" min="0" max="120" placeholder="1.50" inputmode="decimal" aria-label="Width in inches">
+              <input type="number" id="sizeH" step="0.01" min="0" max="120" placeholder="0.83" inputmode="decimal" aria-label="Height in inches">
+            </div>
           </div>
         </div>
 
@@ -249,9 +255,9 @@
         <h2>Station B — Workshop Slabbing & Metrology</h2>
         <p class="meta">Cabochon stencils, kerf notes, dimensional metrology, and workshop notes. Photos from Station A stay on this device.</p>
         <label>Cabochon / Cut notes</label>
-        <textarea id="cabNotes" rows="2" placeholder="Planned 30x22mm oval, kerf 1.2mm, template used..."></textarea>
+        <textarea id="cabNotes" rows="2" placeholder="Planned 1.18 × 0.87 in oval, kerf 0.05 in, template used..."></textarea>
         <label>Metrology / dimensions after slab</label>
-        <input type="text" id="metrology" placeholder="Slab thickness 4.2mm, usable face 28x20mm">
+        <input type="text" id="metrology" placeholder="Slab thickness 0.17 in, usable face 1.10 × 0.79 in">
         <p class="meta">Photos from Station A are available in the ledger.</p>
       </div>
     </div>
@@ -304,6 +310,10 @@
   <script>
     const STORAGE_KEY = 'up8_fieldforge_specimens_v3';
     const LEGACY_STORAGE_KEY = 'up8_fieldforge_specimens_v2';
+    const SIZE_UNIT_FLAG = 'up8_fieldforge_size_unit_in';
+    const CM_PER_IN = 2.54;
+    const MM_PER_IN = 25.4;
+    const SIZE_MAX_IN = 120;
     const VIDEO_DB = 'up8_fieldforge_videos';
     const VIDEO_STORE = 'videos';
     const MAX_VIDEO_SECONDS = 30;
@@ -434,6 +444,87 @@
       });
     }
 
+
+    function formatInches(n) {
+      if (!Number.isFinite(n)) return '';
+      return (Math.round(n * 100) / 100).toFixed(2);
+    }
+    function cmToIn(n) { return n / CM_PER_IN; }
+    function mmToIn(n) { return n / MM_PER_IN; }
+    function convertFromUnit(n, unit) {
+      const u = (unit || '').toLowerCase();
+      if (u === 'mm') return mmToIn(n);
+      if (u === 'cm') return cmToIn(n);
+      return n;
+    }
+    function detectLengthUnit(str) {
+      const s = String(str || '');
+      if (/\bin(?:ch(?:es)?)?\b/i.test(s) || /"|″/.test(s)) return 'in';
+      if (/\bmm\b/i.test(s)) return 'mm';
+      if (/\bcm\b/i.test(s)) return 'cm';
+      return null;
+    }
+    function parseDims(str) {
+      const s = String(str || '').trim();
+      if (!s) return { parts: [], unit: null };
+      const nums = s.match(/-?\d+(?:\.\d+)?/g);
+      return { parts: nums ? nums.map(Number).filter(Number.isFinite) : [], unit: detectLengthUnit(s) };
+    }
+    function dimsToInchString(parts) {
+      return parts.map(formatInches).filter(Boolean).join(' × ');
+    }
+    // Legacy size fields are centimetres unless a unit is written in the string.
+    function convertSizeToInches(str, assumedUnit) {
+      const parsed = parseDims(str);
+      if (!parsed.parts.length) return str ? String(str) : '';
+      const unit = parsed.unit || assumedUnit || 'cm';
+      const parts = parsed.parts.map(n => convertFromUnit(n, unit));
+      return dimsToInchString(parts);
+    }
+    function convertMetricTextToInches(text) {
+      if (!text) return text;
+      let s = String(text);
+      s = s.replace(
+        /(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)(?:\s*[x×]\s*(\d+(?:\.\d+)?))?\s*(mm|cm)\b/gi,
+        (_, a, b, c, unit) => {
+          const parts = [a, b, c].filter(Boolean).map(v => formatInches(convertFromUnit(parseFloat(v), unit)));
+          return parts.join(' × ') + ' in';
+        }
+      );
+      s = s.replace(/(\d+(?:\.\d+)?)\s*(mm|cm)\b/gi, (_, n, unit) => {
+        return formatInches(convertFromUnit(parseFloat(n), unit)) + ' in';
+      });
+      return s;
+    }
+    function formatSizeDisplay(size) {
+      const s = String(size || '').trim();
+      if (!s) return '';
+      if (/\bin(?:ch(?:es)?)?\b/i.test(s)) return s;
+      return s + ' in';
+    }
+    function readSizeFromForm() {
+      const parts = ['sizeL', 'sizeW', 'sizeH'].map(id => {
+        const v = document.getElementById(id).value;
+        if (v === '' || v == null) return '';
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? formatInches(n) : '';
+      }).filter(Boolean);
+      return parts.join(' × ');
+    }
+    function validateSizeInputs() {
+      for (const id of ['sizeL', 'sizeW', 'sizeH']) {
+        const el = document.getElementById(id);
+        if (!el || el.value === '') continue;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n) || n < 0 || n > SIZE_MAX_IN) {
+          alert('Each size value must be between 0 and 120 inches (0.01 in steps).');
+          el.focus();
+          return false;
+        }
+      }
+      return true;
+    }
+
     function migrateV2toV3() {
       if (localStorage.getItem(STORAGE_KEY)) return;
       const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -454,10 +545,34 @@
       }
     }
 
+    function migrateSizesToInches(list) {
+      if (localStorage.getItem(SIZE_UNIT_FLAG) === '1') return list;
+      const migrated = list.map(s => {
+        if (s.sizeUnit === 'in') return { ...s, sizeUnit: 'in' };
+        return {
+          ...s,
+          size: convertSizeToInches(s.size || '', 'cm'),
+          cabNotes: convertMetricTextToInches(s.cabNotes || ''),
+          metrology: convertMetricTextToInches(s.metrology || ''),
+          sizeUnit: 'in'
+        };
+      });
+      try {
+        if (migrated.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        localStorage.setItem(SIZE_UNIT_FLAG, '1');
+        return migrated;
+      } catch (e) {
+        console.warn('FieldForge size unit migration failed', e);
+        return migrated;
+      }
+    }
+
     function loadSpecimens() {
       migrateV2toV3();
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch { return []; }
+      let list;
+      try { list = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { list = []; }
+      return migrateSizesToInches(list);
     }
     function saveSpecimens(list) {
       try {
@@ -478,6 +593,7 @@
         gps: s.gps || '',
         weight: s.weight || '',
         size: s.size || '',
+        sizeUnit: s.sizeUnit || 'in',
         testNotes: s.testNotes || '',
         description: s.description || '',
         mohs: !!s.mohs,
@@ -529,7 +645,7 @@
       container.innerHTML = list.map((s) => `
         <div class="ledger-item" data-id="${esc(s.id)}">
           <strong>${s.rockId ? esc(s.rockId) + ' · ' : (s.id ? esc(s.id) + ' · ' : '')}${esc(s.locality || 'Unknown')} ${s.gps ? '· ' + esc(s.gps) : ''}</strong><br>
-          ${esc(s.weight || '?')} g · ${esc(s.size || 'size n/a')}<br>
+          ${esc(s.weight || '?')} g · ${esc(formatSizeDisplay(s.size) || 'size n/a')}<br>
           <span class="meta">${esc(s.description || s.testNotes || 'No notes')}</span><br>
           ${s.ai ? `<span class="disposition disp-${esc(s.ai.dispositionClass)}">${esc(s.ai.disposition)}</span> · ~${esc(s.ai.value)}` : ''}
           ${s.photoRough ? '<br><small>Rough photo attached</small>' : ''}
@@ -667,6 +783,7 @@
         alert('Video still validating or exceeds the 30s limit.');
         return;
       }
+      if (!validateSizeInputs()) return;
       const id = newSpecimenId();
       const data = {
         id,
@@ -674,7 +791,8 @@
         rockId: (document.getElementById('rockId').value || '').trim().toUpperCase(),
         gps: document.getElementById('gps').value,
         weight: document.getElementById('weight').value,
-        size: document.getElementById('size').value,
+        size: readSizeFromForm(),
+        sizeUnit: 'in',
         testNotes: document.getElementById('testNotes').value,
         description: document.getElementById('description').value,
         mohs: document.getElementById('mohs').checked,
@@ -738,7 +856,8 @@
       const data = {
         locality: document.getElementById('locality').value,
         weight: document.getElementById('weight').value,
-        size: document.getElementById('size').value,
+        size: readSizeFromForm(),
+        sizeUnit: 'in',
         testNotes: document.getElementById('testNotes').value,
         description: document.getElementById('description').value,
         mohs: document.getElementById('mohs').checked,
@@ -751,7 +870,7 @@
         <strong>Suggested ID:</strong> ${esc(ai.id)}<br>
         <strong>Value range:</strong> ${esc(ai.value)}<br>
         <strong>Disposition:</strong> <span class="disposition disp-${esc(ai.dispositionClass)}">${esc(ai.disposition)}</span><br>
-        <span class="meta">SG formula reminder: weight in air / (weight in air − weight in water). Kerf typically 1.0–1.5mm for cabbing.</span>
+        <span class="meta">SG formula reminder: weight in air / (weight in air − weight in water). Kerf typically 0.04–0.06 in for cabbing.</span>
       `;
     });
 
@@ -781,7 +900,7 @@
       }
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const name = `up8-intake-${stamp}.json`;
-      const file = new File([JSON.stringify({ schema: 'up8-fieldforge-bundle/1', createdAt: new Date().toISOString(), specimens: payload })], name, { type: 'application/json' });
+      const file = new File([JSON.stringify({ schema: 'up8-fieldforge-bundle/2', sizeUnit: 'in', createdAt: new Date().toISOString(), specimens: payload })], name, { type: 'application/json' });
       let delivered = false;
       try {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -832,7 +951,7 @@
         <strong>UP8 FieldForge</strong><br>
         ${s.id ? esc(s.id) + '<br>' : ''}
         ${esc(s.locality)} ${esc(s.gps)}<br>
-        ${esc(s.weight)} g · ${esc(s.size)}<br>
+        ${esc(s.weight)} g · ${esc(formatSizeDisplay(s.size))}<br>
         ${s.ai ? esc(s.ai.id) + '<br>' + esc(s.ai.disposition) : ''}<br>
         <small>${s.timestamp && !isNaN(new Date(s.timestamp)) ? new Date(s.timestamp).toLocaleDateString() : ''}</small>
       `;
@@ -853,6 +972,7 @@
       if (confirm('Clear all local specimens? This cannot be undone.')) {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(LEGACY_STORAGE_KEY);
+        localStorage.removeItem(SIZE_UNIT_FLAG);
         try { await clearAllVideoBlobs(); } catch (e) { console.warn(e); }
         try { await clearPhotos(); } catch (e) { console.warn(e); }
         renderLedger();
